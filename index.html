@@ -216,6 +216,77 @@ button:hover { background:var(--accent); color:#000; }
   background: var(--accent);
   color: #000;
 }
+
+/* === MOVESET PANEL === */
+.moves-panel {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: var(--card);
+  border-radius: 10px;
+  box-shadow: 0 0 8px rgba(255,191,0,0.25);
+}
+
+.moves-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+
+.moves-header select {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--accent);
+  background: var(--bg);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.moves-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.moves-table th, .moves-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  text-align: left;
+}
+
+.moves-table th { color: var(--accent); }
+
+.move-type-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 0.8em;
+  margin-left: 6px;
+  color: #fff;
+  text-transform: capitalize;
+}
+
+.move-cat {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.move-cat img {
+  width: 16px;
+  height: 16px;
+}
+
+/* side-by-side regular + shiny art */
+#pokeArtWrap{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:12px;
+  flex-wrap:wrap;
+}
+
 </style>
 </head>
 <body>
@@ -336,6 +407,10 @@ const typeColors={Normal:"#A8A77A",Fire:"#EE8130",Water:"#6390F0",Electric:"#F7D
 Ice:"#96D9D6",Fighting:"#C22E28",Poison:"#A33EA1",Ground:"#E2BF65",Flying:"#A98FF3",
 Psychic:"#F95587",Bug:"#A6B91A",Rock:"#B6A136",Ghost:"#735797",Dragon:"#6F35FC",
 Dark:"#705746",Steel:"#B7B7CE",Fairy:"#D685AD"};
+// add lowercase lookup so "fire" matches your "Fire" colors
+const typeColorsLower = Object.fromEntries(
+  Object.entries(typeColors).map(([k, v]) => [k.toLowerCase(), v])
+);
 const types=Object.keys(typeChart);
 const t1=document.getElementById("type1"),t2=document.getElementById("type2");
 
@@ -1106,6 +1181,129 @@ function loadTeam() {
   // Go to Home on startup
   window.switchTab("homeSection");
 })();
+
+/* === MOVES PANEL + SHINY + GENERATION SELECTOR === */
+
+// Version-group → generation map
+const versionGroupToGen = {
+  "red-blue":1,"yellow":1,
+  "gold-silver":2,"crystal":2,
+  "ruby-sapphire":3,"emerald":3,"firered-leafgreen":3,
+  "diamond-pearl":4,"platinum":4,"heartgold-soulsilver":4,
+  "black-white":5,"black-2-white-2":5,
+  "x-y":6,"omega-ruby-alpha-sapphire":6,
+  "sun-moon":7,"ultra-sun-ultra-moon":7,
+  "sword-shield":8,"brilliant-diamond-and-shining-pearl":8,
+  "scarlet-violet":9
+};
+
+// Inject panel
+(function setupMovesPanel(){
+  const sec=document.getElementById("pokeSection");
+  if(!sec) return;
+  const div=document.createElement("div");
+  div.className="moves-panel";
+  div.innerHTML=`
+    <div class="moves-header">
+      <h3 style="margin:0;">Level-Up Moves</h3>
+      <select id="genSelect">
+        ${Array.from({length:9},(_,i)=>`<option value="${i+1}">Gen ${i+1}</option>`).join("")}
+      </select>
+    </div>
+    <table class="moves-table" id="movesTable">
+      <thead><tr><th>Lvl</th><th>Move</th><th>Type</th><th>Power</th><th>Category</th></tr></thead>
+      <tbody><tr><td colspan="5">No data yet.</td></tr></tbody>
+    </table>`;
+  sec.appendChild(div);
+})();
+
+// Render shiny + fetch moves
+async function showMoves(pName,pId){
+  const genSelect=document.getElementById("genSelect");
+  const tbody=document.querySelector("#movesTable tbody");
+  if(!genSelect||!tbody) return;
+
+  // Ensure both regular and shiny sit side-by-side
+const img = document.getElementById("pokeImg");
+
+// Build a wrapper once and move the existing image into it
+let wrap = document.getElementById("pokeArtWrap");
+if (!wrap) {
+  wrap = document.createElement("div");
+  wrap.id = "pokeArtWrap";
+  img.parentNode.insertBefore(wrap, img);
+  wrap.appendChild(img); // move existing regular art into the wrapper
+}
+
+// Create (or reuse) the shiny image inside the same wrapper
+let shiny = document.getElementById("pokeImgShiny");
+if (!shiny) {
+  shiny = document.createElement("img");
+  shiny.id = "pokeImgShiny";
+  shiny.style.width = "140px";
+  shiny.style.opacity = "1";
+  shiny.style.transition = "opacity .3s ease";
+  wrap.appendChild(shiny);
+}
+
+// Set shiny artwork URL
+shiny.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/shiny/${pId}.png`;
+shiny.hidden = false;
+
+
+  const res=await fetch(`https://pokeapi.co/api/v2/pokemon/${pId}`);
+  const data=await res.json();
+
+  async function render(gen){
+    const lvlMoves=data.moves.map(m=>{
+      const det=m.version_group_details.find(vgd=>
+        versionGroupToGen[vgd.version_group.name]===gen &&
+        vgd.move_learn_method.name==="level-up"
+      );
+      if(!det) return null;
+      return {name:m.move.name,url:m.move.url,level:det.level_learned_at};
+    }).filter(Boolean).sort((a,b)=>a.level-b.level);
+
+    if(!lvlMoves.length){
+      tbody.innerHTML=`<tr><td colspan="5">No level-up moves for Gen ${gen}.</td></tr>`;
+      return;
+    }
+
+    const detailed=await Promise.all(lvlMoves.map(async m=>{
+      try{
+        const r=await fetch(m.url);const j=await r.json();
+        return {
+          name:m.name.replace(/-/g," "),
+          level:m.level||"—",
+          type:j.type.name,
+          power:j.power??"—",
+          cat:j.damage_class.name
+        };
+      }catch{return {...m,type:"unknown",power:"—",cat:"status"};}
+    }));
+
+    tbody.innerHTML=detailed.map(m=>{
+      const color = typeColorsLower[m.type] || "#666";
+      return `<tr>
+        <td>${m.level}</td>
+        <td style="text-transform:capitalize">${m.name}</td>
+        <td><span class="move-type-badge" style="background:${color}">${m.type}</span></td>
+        <td>${m.power}</td>
+        <td style="text-transform:capitalize">${m.cat}</td>
+      </tr>`;
+    }).join("");
+  }
+
+  render(parseInt(genSelect.value));
+  genSelect.onchange=()=>render(parseInt(genSelect.value));
+}
+
+// Hook into selectPoke
+const oldSelectPoke=selectPoke;
+selectPoke=async function(p){
+  await oldSelectPoke(p);
+  showMoves(p.name,p.id);
+};
 
 </script>
 </body>
