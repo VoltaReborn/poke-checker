@@ -12,193 +12,68 @@
   --accent:#ffb400;
   --text:#fff;
 }
-body {
-  margin:0;
-  font-family:system-ui,Arial,sans-serif;
-  background:var(--bg);
-  color:var(--text);
-}
-header {
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding:10px 16px;
-  background:var(--card);
-}
+body { margin:0; font-family:system-ui,Arial,sans-serif; background:var(--bg); color:var(--text); }
+header { display:flex; justify-content:space-between; align-items:center; padding:10px 16px; background:var(--card); }
 h1 { font-size:1.1rem; margin:0; }
 
 /* ---------- TABS ---------- */
-#modeTabs {
-  display:flex;
-  justify-content:center;
-  margin:10px 0;
-}
+#modeTabs { display:flex; justify-content:center; margin:10px 0; }
 .tab {
-  padding:8px 16px;
-  background:var(--card);
-  color:var(--text);
-  border:1px solid var(--accent);
-  border-radius:8px;
-  margin:0 5px;
-  cursor:pointer;
+  padding:8px 16px; background:var(--card); color:var(--text);
+  border:1px solid var(--accent); border-radius:8px; margin:0 5px; cursor:pointer;
 }
-.tab.active {
-  background:var(--accent);
-  color:#000;
-}
+.tab.active { background:var(--accent); color:#000; }
 
 /* ---------- SECTIONS ---------- */
-.section {
-  display:none;
-  padding:10px;
-}
-.section.active {
-  display:block;
-}
+.section { display:none; padding:10px; }
+.section.active { display:block; }
 .resultCard {
-  background:var(--card);
-  margin:8px 0;
-  padding:10px;
-  border:1px solid var(--accent);
-  border-radius:8px;
-  animation:fade .3s;
+  background:var(--card); margin:8px 0; padding:10px;
+  border:1px solid var(--accent); border-radius:8px; animation:fade .3s;
 }
-@keyframes fade {
-  from { opacity:0; }
-  to { opacity:1; }
-}
-.type-badge {
-  display:inline-block;
-  border-radius:12px;
-  padding:4px 8px;
-  margin:2px;
-  color:#fff;
-  font-weight:600;
-  font-size:.9rem;
-}
+@keyframes fade { from{opacity:0;} to{opacity:1;} }
+.type-badge { display:inline-block; border-radius:12px; padding:4px 8px; margin:2px; color:#fff; font-weight:600; font-size:.9rem; }
 
 /* ---------- CONTROLS LAYOUT ---------- */
-#typeControls, #pokeControls {
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:10px;
-  margin-bottom:10px;
-}
+#typeControls, #pokeControls { display:flex; flex-direction:column; align-items:center; gap:10px; margin-bottom:10px; }
 select, input {
-  width:90%;
-  max-width:320px;
-  font-size:1rem;
-  padding:10px;
-  border-radius:6px;
-  border:1px solid var(--accent);
-  background:var(--card);
-  color:var(--text);
-  text-align:center;
+  width:90%; max-width:320px; font-size:1rem; padding:10px; border-radius:6px;
+  border:1px solid var(--accent); background:var(--card); color:var(--text); text-align:center;
 }
-select:focus, input:focus {
-  outline:none;
-  box-shadow:0 0 4px var(--accent);
-}
-#typeButtons, #pokeButtons {
-  display:flex;
-  justify-content:center;
-  gap:10px;
-  flex-wrap:wrap;
-}
+select:focus, input:focus { outline:none; box-shadow:0 0 4px var(--accent); }
+#typeButtons, #pokeButtons { display:flex; justify-content:center; gap:10px; flex-wrap:wrap; }
 
 /* ---------- BUTTONS ---------- */
-button {
-  font-size:1rem;
-  padding:8px 12px;
-  border-radius:6px;
-  border:1px solid var(--accent);
-  background:var(--card);
-  color:var(--text);
-  cursor:pointer;
-}
-button:hover {
-  background:var(--accent);
-  color:#000;
-}
-#resetBtn, #pokeResetBtn {
-  background:none;
-  border:1px solid var(--accent);
-  color:var(--accent);
-}
-#resetBtn:hover, #pokeResetBtn:hover {
-  background:var(--accent);
-  color:#000;
-}
+button { font-size:1rem; padding:8px 12px; border-radius:6px; border:1px solid var(--accent); background:var(--card); color:var(--text); cursor:pointer; }
+button:hover { background:var(--accent); color:#000; }
+#resetBtn, #pokeResetBtn { background:none; border:1px solid var(--accent); color:var(--accent); }
+#resetBtn:hover, #pokeResetBtn:hover { background:var(--accent); color:#000; }
 
 /* ---------- DIVIDER ---------- */
 .section-divider {
-  margin:16px 0;
-  text-align:center;
-  font-weight:bold;
-  color:var(--accent);
-  position:relative;
+  margin:16px 0; text-align:center; font-weight:bold; color:var(--accent); position:relative;
 }
-.section-divider::before,
-.section-divider::after {
-  content:"";
-  position:absolute;
-  top:50%;
-  width:40%;
-  height:1px;
+.section-divider::before, .section-divider::after {
+  content:""; position:absolute; top:50%; width:40%; height:1px;
   background:linear-gradient(to right,transparent,var(--accent),transparent);
 }
-.section-divider::before { left:0; }
-.section-divider::after { right:0; }
+.section-divider::before { left:0; } .section-divider::after { right:0; }
 
 /* ---------- TYPE PREVIEW ---------- */
-#typePreview, #pokeTypePreview {
-  display:flex;
-  justify-content:center;
-  gap:6px;
-}
-.type-preview-badge {
-  display:inline-block;
-  width:60px;
-  height:18px;
-  border-radius:10px;
-}
+#typePreview, #pokeTypePreview { display:flex; justify-content:center; gap:6px; }
+.type-preview-badge { display:inline-block; width:60px; height:18px; border-radius:10px; }
 
 /* ---------- POKÉMON CHECKER ---------- */
-#pokeImg {
-  width:120px;
-  display:block;
-  margin:10px auto;
-}
-#pokeList div {
-  padding:4px 8px;
-  background:var(--card);
-  border:1px solid var(--accent);
-  border-radius:6px;
-  margin:2px 0;
-}
-#pokeList div:hover {
-  background:var(--accent);
-  color:#000;
-}
+#pokeImg { width:120px; display:block; margin:10px auto; }
+#pokeList div { padding:4px 8px; background:var(--card); border:1px solid var(--accent); border-radius:6px; margin:2px 0; }
+#pokeList div:hover { background:var(--accent); color:#000; }
 
 /* ---------- THEME TOGGLE ---------- */
-#themeToggle {
-  background:none;
-  border:none;
-  cursor:pointer;
-  color:var(--accent);
-  font-size:1.2rem;
-}
+#themeToggle { background:none; border:none; cursor:pointer; color:var(--accent); font-size:1.2rem; }
 
 /* ---------- RESPONSIVE ---------- */
 @media(min-width:700px){
-  main {
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:12px;
-    padding:10px;
-  }
+  main { display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:10px; }
 }
 </style>
 </head>
@@ -221,9 +96,7 @@ button:hover {
         <select id="type1"></select>
       </label>
       <label>Type 2:
-        <select id="type2">
-          <option value="">(none)</option>
-        </select>
+        <select id="type2"><option value="">(none)</option></select>
       </label>
       <div id="typePreview"></div>
     </div>
@@ -234,7 +107,7 @@ button:hover {
     <div id="typeResults"></div>
   </section>
 
-  <!-- POKEMON SECTION -->
+  <!-- POKÉMON SECTION -->
   <section id="pokeSection" class="section">
     <div id="pokeControls">
       <input id="pokeSearch" placeholder="Search Pokémon name..." autocomplete="off" />
@@ -251,6 +124,27 @@ button:hover {
 </main>
 
 <script>
+/* ---------- VERSION CONTROL (optional UI button) ---------- */
+const appVersion = "1.2.1";
+const refreshButton = document.createElement("button");
+refreshButton.textContent = "🔄 Refresh App";
+Object.assign(refreshButton.style, { position:"fixed", bottom:"10px", right:"10px", padding:"6px 10px",
+  fontSize:"0.9rem", borderRadius:"6px", border:"1px solid var(--accent)", background:"var(--card)", color:"var(--accent)", zIndex:"9999"});
+refreshButton.onclick = () => {
+  localStorage.removeItem("poketype-version");
+  if ('caches' in window) caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
+  location.reload(true);
+};
+document.addEventListener("DOMContentLoaded", () => document.body.append(refreshButton));
+const storedVersion = localStorage.getItem("poketype-version");
+if (storedVersion && storedVersion !== appVersion) {
+  if ('caches' in window) caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
+  localStorage.setItem("poketype-version", appVersion);
+  location.reload(true);
+} else if (!storedVersion) {
+  localStorage.setItem("poketype-version", appVersion);
+}
+
 /* ---------- TYPE DATA ---------- */
 const typeChart={
 Normal:{weak:["Fighting"],resist:[],immune:["Ghost"]},
@@ -279,7 +173,7 @@ Dark:"#705746",Steel:"#B7B7CE",Fairy:"#D685AD"};
 const types=Object.keys(typeChart);
 const t1=document.getElementById("type1"),t2=document.getElementById("type2");
 
-/* ---------- COLORFUL OPTIONS (desktop) ---------- */
+/* ---------- COLORFUL OPTIONS (desktop-capable) ---------- */
 function addTypeOptions(sel){
   types.forEach(t=>{
     const opt=new Option(t,t);
@@ -289,8 +183,7 @@ function addTypeOptions(sel){
     sel.add(opt);
   });
 }
-addTypeOptions(t1);
-addTypeOptions(t2);
+addTypeOptions(t1); addTypeOptions(t2);
 
 /* ---------- TAB SWITCH ---------- */
 document.querySelectorAll(".tab").forEach(tab=>{
@@ -314,7 +207,6 @@ document.getElementById("themeToggle").onclick=()=>{
 /* ---------- PREVIEW BADGES ---------- */
 function updateTypePreview(){
   const preview=document.getElementById("typePreview");
-  if(!preview) return;
   preview.innerHTML="";
   [t1.value,t2.value].filter(Boolean).forEach(t=>{
     const div=document.createElement("div");
@@ -323,24 +215,18 @@ function updateTypePreview(){
     preview.append(div);
   });
 }
-t1.onchange=updateTypePreview;
-t2.onchange=updateTypePreview;
+t1.onchange=updateTypePreview; t2.onchange=updateTypePreview;
 
 /* ---------- RESET BUTTON ---------- */
-const resetBtn=document.getElementById("resetBtn");
-if(resetBtn){
-  resetBtn.onclick=()=>{
-    t1.selectedIndex=0;
-    t2.selectedIndex=0;
-    document.getElementById("typeResults").innerHTML="";
-    updateTypePreview();
-  };
-}
+document.getElementById("resetBtn").onclick=()=>{
+  t1.selectedIndex=0; t2.selectedIndex=0;
+  document.getElementById("typeResults").innerHTML="";
+  updateTypePreview();
+};
 
 /* ---------- EFFECTIVENESS CALCS ---------- */
 function calcOffense(selTypes){
-  const all=Object.keys(typeChart);
-  const result={strong:[],weak:[],immune:[]};
+  const all=Object.keys(typeChart); const result={strong:[],weak:[],immune:[]};
   all.forEach(def=>{
     let mult=1;
     selTypes.forEach(atk=>{
@@ -355,8 +241,7 @@ function calcOffense(selTypes){
   return result;
 }
 function calcDefense(selTypes){
-  const all=Object.keys(typeChart);
-  const result={strong:[],weak:[],immune:[]};
+  const all=Object.keys(typeChart); const result={strong:[],weak:[],immune:[]};
   all.forEach(atk=>{
     let mult=1;
     selTypes.forEach(def=>{
@@ -371,15 +256,13 @@ function calcDefense(selTypes){
   return result;
 }
 
-/* ---------- RENDER RESULTS ---------- */
-function renderResults(container,label,defense,offense){
+/* ---------- RENDERERS ---------- */
+function renderBoth(container,label,defense,offense){
   container.innerHTML="";
   const make=(l,d)=>{
     if(!d.length) return "";
     let html=`<div class='resultCard'><strong>${l}</strong><br>`;
-    d.forEach(o=>{
-      html+=`<span class='type-badge' style='background:${typeColors[o.type]}'>${o.type} ×${o.mult}</span>`;
-    });
+    d.forEach(o=>{ html+=`<span class='type-badge' style='background:${typeColors[o.type]}'>${o.type} ×${o.mult}</span>`; });
     return html+"</div>";
   };
   container.innerHTML+=make(`Strong Against ${label}`,defense.strong);
@@ -390,19 +273,27 @@ function renderResults(container,label,defense,offense){
   container.innerHTML+=make(`${label} is Weak Against`,offense.weak);
   container.innerHTML+=make(`${label} has No Effect On`,offense.immune);
 }
+function renderDefenseOnly(container,label,defense){
+  container.innerHTML="";
+  const make=(l,d)=>{
+    if(!d.length) return "";
+    let html=`<div class='resultCard'><strong>${l}</strong><br>`;
+    d.forEach(o=>{ html+=`<span class='type-badge' style='background:${typeColors[o.type]}'>${o.type} ×${o.mult}</span>`; });
+    return html+"</div>";
+  };
+  container.innerHTML+=make(`Strong Against ${label}`,defense.strong);
+  container.innerHTML+=make(`Not Very Effective Against ${label}`,defense.weak);
+  container.innerHTML+=make(`No Effect Against ${label}`,defense.immune);
+}
 
 /* ---------- TYPE CHECK BUTTON ---------- */
-const checkBtn=document.getElementById("checkBtn");
-if(checkBtn){
-  checkBtn.onclick=()=>{
-    const sel=[t1.value,t2.value].filter(Boolean);
-    if(!sel.length) return;
-    const label=sel.join(" / ");
-    const def=calcDefense(sel);
-    const off=calcOffense(sel);
-    renderResults(document.getElementById("typeResults"),label,def,off);
-  };
-}
+document.getElementById("checkBtn").onclick=()=>{
+  const sel=[t1.value,t2.value].filter(Boolean);
+  if(!sel.length) return;
+  const label=sel.join(" / ");
+  const def=calcDefense(sel), off=calcOffense(sel);
+  renderBoth(document.getElementById("typeResults"),label,def,off);
+};
 
 /* ---------- POKÉMON CHECKER ---------- */
 const pokeInput=document.getElementById("pokeSearch"),
@@ -414,24 +305,20 @@ async function loadData(){
   const list=await res.json();
   pokedata=list.map(p=>({name:p.name.english,types:p.type,id:p.id}));
 }
-if(pokeInput){
-  pokeInput.addEventListener("input",async()=>{
-    await loadData();
-    const q=pokeInput.value.toLowerCase();
-    pokeList.innerHTML="";
-    if(!q) return;
-    pokedata.filter(p=>p.name.toLowerCase().includes(q)).slice(0,10).forEach(p=>{
-      const div=document.createElement("div");
-      div.textContent=p.name;
-      div.style.cursor="pointer";
-      div.onclick=()=>selectPoke(p);
-      pokeList.append(div);
-    });
-  });
-}
-async function selectPoke(p){
+pokeInput.addEventListener("input",async()=>{
+  await loadData();
+  const q=pokeInput.value.toLowerCase();
   pokeList.innerHTML="";
-  pokeInput.value=p.name;
+  if(!q) return;
+  pokedata.filter(p=>p.name.toLowerCase().includes(q)).slice(0,10).forEach(p=>{
+    const div=document.createElement("div");
+    div.textContent=p.name; div.style.cursor="pointer";
+    div.onclick=()=>selectPoke(p);
+    pokeList.append(div);
+  });
+});
+async function selectPoke(p){
+  pokeList.innerHTML=""; pokeInput.value=p.name;
   document.getElementById("pokeTypes").innerHTML="";
   const img=document.getElementById("pokeImg");
   const num=String(p.id).padStart(3,"0");
@@ -439,39 +326,26 @@ async function selectPoke(p){
   img.hidden=false;
   p.types.forEach(t=>{
     const b=document.createElement("span");
-    b.className="type-badge";
-    b.textContent=t;
-    b.style.background=typeColors[t];
+    b.className="type-badge"; b.textContent=t; b.style.background=typeColors[t];
     document.getElementById("pokeTypes").append(b);
   });
   const def=calcDefense(p.types);
-  const off=calcOffense(p.types);
-  renderResults(document.getElementById("pokeResults"),p.name,def,off);
-  // sync with Type tab
-  t1.value=p.types[0];
-  t2.value=p.types[1]||"";
-  updateTypePreview();
-  const label=p.types.join(" / ");
-  renderResults(document.getElementById("typeResults"),label,def,off);
+  renderDefenseOnly(document.getElementById("pokeResults"),p.name,def);
+
+  // sync Type tab with Pokémon types and pre-render both views
+  t1.value=p.types[0]; t2.value=p.types[1]||""; updateTypePreview();
+  const label=p.types.join(" / "); const off=calcOffense(p.types);
+  renderBoth(document.getElementById("typeResults"),label,def,off);
 }
 
 /* ---------- POKÉMON RESET ---------- */
-const pokeReset=document.getElementById("pokeResetBtn");
-if(pokeReset){
-  pokeReset.onclick=()=>{
-    const list=document.getElementById("pokeList");
-    const typesBox=document.getElementById("pokeTypes");
-    const results=document.getElementById("pokeResults");
-    const img=document.getElementById("pokeImg");
-    pokeInput.value="";
-    if(list) list.innerHTML="";
-    if(typesBox) typesBox.innerHTML="";
-    if(results) results.innerHTML="";
-    if(img) img.hidden=true;
-  };
-}
+document.getElementById("pokeResetBtn").onclick=()=>{
+  pokeInput.value=""; document.getElementById("pokeList").innerHTML="";
+  document.getElementById("pokeTypes").innerHTML=""; document.getElementById("pokeResults").innerHTML="";
+  document.getElementById("pokeImg").hidden=true;
+};
 
-/* ---------- PWA REGISTRATION ---------- */
+/* ---------- PWA REGISTRATION (only over http/https) ---------- */
 if("serviceWorker" in navigator && location.protocol.startsWith("http")){
   navigator.serviceWorker.register("sw.js");
 }
