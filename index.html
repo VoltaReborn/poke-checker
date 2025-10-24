@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PokéType Checker</title>
+<link rel="manifest" href="manifest.json">
+<style>
+:root {
+  --bg:#0a1224; --card:#15254b; --accent:#ffb400; --text:#fff;
+}
+body {
+  margin:0; font-family:system-ui,Arial,sans-serif; background:var(--bg); color:var(--text);
+}
+header {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:10px 16px; background:var(--card);
+}
+h1 { font-size:1.1rem; margin:0; }
+button,select,input {
+  font-size:1rem; padding:8px; border-radius:6px; border:1px solid var(--accent);
+  background:var(--card); color:var(--text);
+}
+select:focus,input:focus,button:focus{outline:none;box-shadow:0 0 4px var(--accent);}
+#modeTabs { display:flex; justify-content:center; margin:10px; }
+.tab {
+  padding:8px 16px; background:var(--card); color:var(--text);
+  border:1px solid var(--accent); border-radius:8px; margin:0 5px; cursor:pointer;
+}
+.tab.active { background:var(--accent); color:#000; }
+.section { display:none; padding:10px; }
+.section.active { display:block; }
+.resultCard {
+  background:var(--card); margin:8px 0; padding:10px;
+  border:1px solid var(--accent); border-radius:8px; animation:fade .3s;
+}
+@keyframes fade { from{opacity:0;} to{opacity:1;} }
+.type-badge {
+  display:inline-block; border-radius:12px; padding:4px 8px; margin:2px;
+  color:#fff; font-weight:600; font-size:.9rem;
+}
+#themeToggle { background:none; border:none; cursor:pointer; color:var(--accent); font-size:1.2rem; }
+#pokeImg { width:120px; display:block; margin:10px auto; }
+@media(min-width:700px){
+  main { display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:10px; }
+}
+
+</style>
+
+</head>
+<body>
+<header>
+  <h1>PokéType Checker</h1>
+  <button id="themeToggle">🎨</button>
+</header>
+<div id="modeTabs">
+  <div class="tab active" data-target="typeSection">Type Checker</div>
+  <div class="tab" data-target="pokeSection">Pokémon Checker</div>
+</div>
+
+<main>
+<section id="typeSection" class="section active">
+  <label>Type 1:
+    <select id="type1"></select>
+  </label><br>
+  <label>Type 2:
+    <select id="type2">
+      <option value="">(none)</option>
+    </select>
+  </label><br><br>
+  <button id="checkBtn">Check Effectiveness</button>
+  <div id="typeResults"></div>
+</section>
+
+<section id="pokeSection" class="section">
+  <input id="pokeSearch" placeholder="Search Pokémon name..." autocomplete="off" />
+  <div id="pokeList"></div>
+  <img id="pokeImg" hidden>
+  <div id="pokeTypes"></div>
+  <div id="pokeResults"></div>
+</section>
+</main>
+
+<script>
+/* --- TYPE DATA --- */
+const typeChart={
+Normal:{weak:["Fighting"],resist:[],immune:["Ghost"]},
+Fire:{weak:["Water","Ground","Rock"],resist:["Fire","Grass","Ice","Bug","Steel","Fairy"],immune:[]},
+Water:{weak:["Electric","Grass"],resist:["Fire","Water","Ice","Steel"],immune:[]},
+Electric:{weak:["Ground"],resist:["Electric","Flying","Steel"],immune:[]},
+Grass:{weak:["Fire","Ice","Poison","Flying","Bug"],resist:["Water","Electric","Grass","Ground"],immune:[]},
+Ice:{weak:["Fire","Fighting","Rock","Steel"],resist:["Ice"],immune:[]},
+Fighting:{weak:["Flying","Psychic","Fairy"],resist:["Bug","Rock","Dark"],immune:[]},
+Poison:{weak:["Ground","Psychic"],resist:["Grass","Fighting","Poison","Bug","Fairy"],immune:[]},
+Ground:{weak:["Water","Grass","Ice"],resist:["Poison","Rock"],immune:["Electric"]},
+Flying:{weak:["Electric","Ice","Rock"],resist:["Grass","Fighting","Bug"],immune:["Ground"]},
+Psychic:{weak:["Bug","Ghost","Dark"],resist:["Fighting","Psychic"],immune:[]},
+Bug:{weak:["Fire","Flying","Rock"],resist:["Grass","Fighting","Ground"],immune:[]},
+Rock:{weak:["Water","Grass","Fighting","Ground","Steel"],resist:["Normal","Fire","Poison","Flying"],immune:[]},
+Ghost:{weak:["Ghost","Dark"],resist:["Poison","Bug"],immune:["Normal","Fighting"]},
+Dragon:{weak:["Ice","Dragon","Fairy"],resist:["Fire","Water","Electric","Grass"],immune:[]},
+Dark:{weak:["Fighting","Bug","Fairy"],resist:["Ghost","Dark"],immune:["Psychic"]},
+Steel:{weak:["Fire","Fighting","Ground"],resist:["Normal","Grass","Ice","Flying","Psychic","Bug","Rock","Dragon","Steel","Fairy"],immune:["Poison"]},
+Fairy:{weak:["Poison","Steel"],resist:["Fighting","Bug","Dark"],immune:["Dragon"]}
+};
+const typeColors={Normal:"#A8A77A",Fire:"#EE8130",Water:"#6390F0",Electric:"#F7D02C",Grass:"#7AC74C",
+Ice:"#96D9D6",Fighting:"#C22E28",Poison:"#A33EA1",Ground:"#E2BF65",Flying:"#A98FF3",
+Psychic:"#F95587",Bug:"#A6B91A",Rock:"#B6A136",Ghost:"#735797",Dragon:"#6F35FC",
+Dark:"#705746",Steel:"#B7B7CE",Fairy:"#D685AD"};
+const types=Object.keys(typeChart);
+const t1=document.getElementById("type1"),t2=document.getElementById("type2");
+function addTypeOptions(sel){
+  types.forEach(t=>{
+    const opt=new Option(t,t);
+    opt.style.background=typeColors[t];
+    opt.style.color="#fff";
+    opt.style.fontWeight="600";
+    sel.add(opt);
+  });
+}
+addTypeOptions(t1);
+addTypeOptions(t2);
+
+/* --- Tabs --- */
+document.querySelectorAll(".tab").forEach(tab=>{
+  tab.onclick=()=>{
+    document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+    document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+    tab.classList.add("active");
+    document.getElementById(tab.dataset.target).classList.add("active");
+  };
+});
+
+/* --- Theme toggle --- */
+let pokemonTheme=false;
+document.getElementById("themeToggle").onclick=()=>{
+  pokemonTheme=!pokemonTheme;
+  document.documentElement.style.setProperty("--bg",pokemonTheme?"#fff":"#0a1224");
+  document.documentElement.style.setProperty("--card",pokemonTheme?"#f4f4f4":"#15254b");
+  document.documentElement.style.setProperty("--text",pokemonTheme?"#000":"#fff");
+};
+
+/* --- Counter Finder Logic ("What beats this?") --- */
+function calcCounters(types){
+  const all=Object.keys(typeChart);
+  const result={strong:[],weak:[],immune:[]};
+
+  all.forEach(atk=>{
+    let mult=1;
+    types.forEach(def=>{
+      if(typeChart[def].weak.includes(atk)) mult*=2;     // attacker is strong vs this def
+      if(typeChart[def].resist.includes(atk)) mult*=0.5; // attacker is weak vs this def
+      if(typeChart[def].immune.includes(atk)) mult*=0;   // attacker can't hit
+    });
+    if(mult>1) result.strong.push({type:atk,mult});
+    if(mult<1&&mult>0) result.weak.push({type:atk,mult});
+    if(mult===0) result.immune.push({type:atk,mult});
+  });
+  return result;
+}
+
+/* --- offense: what this type deals damage to --- */
+function calcOffense(types){
+  const all=Object.keys(typeChart);
+  const result={strong:[],weak:[],immune:[]};
+  all.forEach(def=>{
+    let mult=1;
+    types.forEach(atk=>{
+      if(typeChart[def].weak.includes(atk)) mult*=2;
+      if(typeChart[def].resist.includes(atk)) mult*=0.5;
+      if(typeChart[def].immune.includes(atk)) mult*=0;
+    });
+    if(mult>1) result.strong.push({type:def,mult});
+    if(mult<1&&mult>0) result.weak.push({type:def,mult});
+    if(mult===0) result.immune.push({type:def,mult});
+  });
+  return result;
+}
+
+/* --- defensive: what beats this type --- */
+function calcDefense(types){
+  const all=Object.keys(typeChart);
+  const result={strong:[],weak:[],immune:[]};
+  all.forEach(atk=>{
+    let mult=1;
+    types.forEach(def=>{
+      if(typeChart[def].weak.includes(atk)) mult*=2;
+      if(typeChart[def].resist.includes(atk)) mult*=0.5;
+      if(typeChart[def].immune.includes(atk)) mult*=0;
+    });
+    if(mult>1) result.strong.push({type:atk,mult});
+    if(mult<1&&mult>0) result.weak.push({type:atk,mult});
+    if(mult===0) result.immune.push({type:atk,mult});
+  });
+  return result;
+}
+
+/* --- render both views --- */
+function renderResults(container,targetLabel,defense,offense){
+  container.innerHTML="";
+  const makeSection=(label,data)=>{
+    if(!data.length) return "";
+    let html=`<div class="resultCard"><strong>${label}</strong><br>`;
+    data.forEach(o=>{
+      html+=`<span class="type-badge" style="background:${typeColors[o.type]}">${o.type} ×${o.mult}</span>`;
+    });
+    return html+"</div>";
+  };
+
+  // defensive first
+  container.innerHTML+=makeSection(`Strong Against ${targetLabel}`,defense.strong);
+  container.innerHTML+=makeSection(`Not Very Effective Against ${targetLabel}`,defense.weak);
+  container.innerHTML+=makeSection(`No Effect Against ${targetLabel}`,defense.immune);
+
+  // divider
+  container.innerHTML+=`<hr style="border:1px solid var(--accent);margin:10px 0;">`;
+
+  // offensive second
+  container.innerHTML+=makeSection(`${targetLabel} is Strong Against`,offense.strong);
+  container.innerHTML+=makeSection(`${targetLabel} is Weak Against`,offense.weak);
+  container.innerHTML+=makeSection(`${targetLabel} has No Effect On`,offense.immune);
+}
+
+/* --- Type checker button --- */
+document.getElementById("checkBtn").onclick=()=>{
+  const sel=[t1.value,t2.value].filter(Boolean);
+  if(!sel.length) return;
+  const label=sel.join(" / ");
+  const defense=calcDefense(sel); // what beats this
+  const offense=calcOffense(sel); // what this beats
+  renderResults(document.getElementById("typeResults"),label,defense,offense);
+};
+
+/* --- Pokémon logic --- */
+let pokedata=[];
+async function loadData(){
+  if(pokedata.length) return;
+  const res=await fetch("https://raw.githubusercontent.com/fanzeyi/pokemon.json/master/pokedex.json");
+  const list=await res.json();
+  pokedata=list.map(p=>({name:p.name.english,types:p.type,id:p.id}));
+}
+const pokeInput=document.getElementById("pokeSearch"),pokeList=document.getElementById("pokeList");
+pokeInput.addEventListener("input",async()=>{
+  await loadData();
+  const q=pokeInput.value.toLowerCase();
+  pokeList.innerHTML="";
+  if(!q) return;
+  pokedata.filter(p=>p.name.toLowerCase().includes(q)).slice(0,10).forEach(p=>{
+    const div=document.createElement("div");div.textContent=p.name;div.style.cursor="pointer";
+    div.onclick=()=>selectPoke(p);
+    pokeList.append(div);
+  });
+});
+async function selectPoke(p){
+  pokeList.innerHTML=""; pokeInput.value=p.name;
+  document.getElementById("pokeTypes").innerHTML="";
+  const img=document.getElementById("pokeImg");
+  const num=String(p.id).padStart(3,"0");
+  img.src=`https://raw.githubusercontent.com/fanzeyi/pokemon.json/master/images/${num}.png`;
+  img.hidden=false;
+  p.types.forEach(t=>{
+    const b=document.createElement("span");
+    b.className="type-badge"; b.textContent=t; b.style.background=typeColors[t];
+    document.getElementById("pokeTypes").append(b);
+  });
+
+  const defense=calcDefense(p.types);
+  const offense=calcOffense(p.types);
+  renderResults(document.getElementById("pokeResults"),p.name,defense,offense);
+
+  // sync dropdowns & results in Type Checker
+  t1.value=p.types[0]; t2.value=p.types[1]||"";
+  const label=p.types.join(" / ");
+  const typeDefense=calcDefense(p.types);
+  const typeOffense=calcOffense(p.types);
+  renderResults(document.getElementById("typeResults"),label,typeDefense,typeOffense);
+}
+
+/* --- PWA registration --- */
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js');
+}
+</script>
+
+</body>
+</html>
