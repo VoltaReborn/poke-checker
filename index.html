@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>PokéType Checker</title>
-<link rel="manifest" href="manifest.json">
+<link rel="manifest" href="manifest.json" />
 <style>
 :root {
   --bg:#0a1224;
@@ -12,11 +12,14 @@
   --accent:#ffb400;
   --text:#fff;
 }
-body { margin:0; font-family:system-ui,Arial,sans-serif; background:var(--bg); color:var(--text); }
+/* Base */
+* { box-sizing: border-box; }
+body { margin:0; font-family: system-ui, Arial, sans-serif; background: var(--bg); color: var(--text); }
 header { display:flex; justify-content:space-between; align-items:center; padding:10px 16px; background:var(--card); }
 h1 { font-size:1.1rem; margin:0; }
+#themeToggle { background:none; border:none; cursor:pointer; color:var(--accent); font-size:1.2rem; }
 
-/* ---------- TABS ---------- */
+/* Tabs */
 #modeTabs { display:flex; justify-content:center; margin:10px 0; }
 .tab {
   padding:8px 16px; background:var(--card); color:var(--text);
@@ -24,7 +27,7 @@ h1 { font-size:1.1rem; margin:0; }
 }
 .tab.active { background:var(--accent); color:#000; }
 
-/* ---------- SECTIONS ---------- */
+/* Sections & Cards */
 .section { display:none; padding:10px; }
 .section.active { display:block; }
 .resultCard {
@@ -32,24 +35,30 @@ h1 { font-size:1.1rem; margin:0; }
   border:1px solid var(--accent); border-radius:8px; animation:fade .3s;
 }
 @keyframes fade { from{opacity:0;} to{opacity:1;} }
-.type-badge { display:inline-block; border-radius:12px; padding:4px 8px; margin:2px; color:#fff; font-weight:600; font-size:.9rem; }
+.type-badge {
+  display:inline-block; border-radius:12px; padding:4px 8px; margin:2px;
+  color:#fff; font-weight:600; font-size:.9rem;
+}
 
-/* ---------- CONTROLS LAYOUT ---------- */
-#typeControls, #pokeControls { display:flex; flex-direction:column; align-items:center; gap:10px; margin-bottom:10px; }
+/* Controls */
+#typeControls, #pokeControls {
+  display:flex; flex-direction:column; align-items:center; gap:10px; margin-bottom:10px;
+}
 select, input {
-  width:90%; max-width:320px; font-size:1rem; padding:10px; border-radius:6px;
+  width:90%; max-width:360px; font-size:1rem; padding:12px; border-radius:8px;
   border:1px solid var(--accent); background:var(--card); color:var(--text); text-align:center;
 }
 select:focus, input:focus { outline:none; box-shadow:0 0 4px var(--accent); }
-#typeButtons, #pokeButtons { display:flex; justify-content:center; gap:10px; flex-wrap:wrap; }
-
-/* ---------- BUTTONS ---------- */
-button { font-size:1rem; padding:8px 12px; border-radius:6px; border:1px solid var(--accent); background:var(--card); color:var(--text); cursor:pointer; }
+#typeButtons { display:flex; justify-content:center; gap:10px; flex-wrap:wrap; }
+button {
+  font-size:1rem; padding:10px 14px; border-radius:8px; border:1px solid var(--accent);
+  background:var(--card); color:var(--text); cursor:pointer;
+}
 button:hover { background:var(--accent); color:#000; }
 #resetBtn, #pokeResetBtn { background:none; border:1px solid var(--accent); color:var(--accent); }
 #resetBtn:hover, #pokeResetBtn:hover { background:var(--accent); color:#000; }
 
-/* ---------- DIVIDER ---------- */
+/* Divider */
 .section-divider {
   margin:16px 0; text-align:center; font-weight:bold; color:var(--accent); position:relative;
 }
@@ -59,28 +68,64 @@ button:hover { background:var(--accent); color:#000; }
 }
 .section-divider::before { left:0; } .section-divider::after { right:0; }
 
-/* ---------- TYPE PREVIEW ---------- */
+/* Previews */
 #typePreview, #pokeTypePreview { display:flex; justify-content:center; gap:6px; }
 .type-preview-badge { display:inline-block; width:60px; height:18px; border-radius:10px; }
 
-/* ---------- POKÉMON CHECKER ---------- */
-#pokeImg { width:120px; display:block; margin:10px auto; }
-#pokeList div { padding:4px 8px; background:var(--card); border:1px solid var(--accent); border-radius:6px; margin:2px 0; }
+/* Pokémon checker specifics */
+#pokeImg { width:140px; display:block; margin:10px auto; }
+#pokeList div { padding:6px 10px; background:var(--card); border:1px solid var(--accent);
+  border-radius:8px; margin:2px 0; }
 #pokeList div:hover { background:var(--accent); color:#000; }
 
-/* ---------- THEME TOGGLE ---------- */
-#themeToggle { background:none; border:none; cursor:pointer; color:var(--accent); font-size:1.2rem; }
+/* Evolution UI */
+#pokeButtonsRow { display:flex; justify-content:center; gap:10px; margin-top:10px; flex-wrap:wrap; }
+#evoCard { background:var(--card); border:1px solid var(--accent); border-radius:12px; padding:10px; margin:10px 0; }
+.evo-line { display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:10px; }
+.evo-node { text-align:center; cursor:pointer; }
+.evo-node img { width:72px; height:72px; object-fit:contain; display:block; margin:0 auto 4px; }
+.evo-name { font-size:.85rem; }
+.evo-arrow { color:var(--accent); font-weight:700; display:flex; align-items:center; gap:6px; }
+.evo-method { font-size:.75rem; opacity:.9; }
 
-/* ---------- RESPONSIVE ---------- */
-@media(min-width:700px){
-  main { display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:10px; }
+/* Responsive layout */
+@media (min-width: 700px) {
+  main { display:grid; grid-template-columns: 1fr 1fr; gap:12px; padding:10px; }
+}
+
+@keyframes pokePulse {
+  0%   { filter: drop-shadow(0 0 6px rgba(255,180,0,0.35)); }
+  50%  { filter: drop-shadow(0 0 18px rgba(255,180,0,0.75)); }
+  100% { filter: drop-shadow(0 0 6px rgba(255,180,0,0.35)); }
+}
+
+/* Default: subtle placeholder (smaller, semi-transparent) */
+#pokeImg{
+  display:block;
+  margin:10px auto;
+  width:100px;
+  opacity:0.55;
+  transition: opacity .45s ease, width .25s ease;
+}
+
+/* Pulsing amber glow state (when showing Poké Ball icon) */
+#pokeImg.pulse{
+  animation: pokePulse 2.4s ease-in-out infinite;
+}
+
+/* Active Pokémon artwork (larger, fully opaque, no pulse) */
+#pokeImg.active{
+  width:140px;
+  opacity:1;
+  animation:none;
+  filter:none;
 }
 </style>
 </head>
 <body>
 <header>
   <h1>PokéType Checker</h1>
-  <button id="themeToggle">🎨</button>
+  <button id="themeToggle" title="Toggle Theme">🎨</button>
 </header>
 
 <div id="modeTabs">
@@ -89,14 +134,16 @@ button:hover { background:var(--accent); color:#000; }
 </div>
 
 <main>
-  <!-- TYPE SECTION -->
+  <!-- TYPE SECTION (both perspectives) -->
   <section id="typeSection" class="section active">
     <div id="typeControls">
       <label>Type 1:
         <select id="type1"></select>
       </label>
       <label>Type 2:
-        <select id="type2"><option value="">(none)</option></select>
+        <select id="type2">
+          <option value="">(none)</option>
+        </select>
       </label>
       <div id="typePreview"></div>
     </div>
@@ -107,29 +154,52 @@ button:hover { background:var(--accent); color:#000; }
     <div id="typeResults"></div>
   </section>
 
-  <!-- POKÉMON SECTION -->
+  <!-- POKÉMON SECTION (defense-only + evolution info) -->
   <section id="pokeSection" class="section">
     <div id="pokeControls">
       <input id="pokeSearch" placeholder="Search Pokémon name..." autocomplete="off" />
       <div id="pokeList"></div>
-      <img id="pokeImg" hidden>
+      <img id="pokeImg"
+        src="icon-192.png"
+        alt="Poké Ball placeholder"
+        class="pulse">
       <div id="pokeTypes"></div>
-      <div id="pokeTypePreview"></div>
-    </div>
-    <div id="pokeButtons">
-      <button id="pokeResetBtn">Reset Pokémon</button>
+      <div id="pokeButtonsRow">
+        <button id="evoToggleBtn">Show Evolution Info</button>
+        <button id="pokeResetBtn">Reset Pokémon</button>
+      </div>
+      <div id="evoCard" hidden>
+        <div id="evoTitle" style="font-weight:700;margin-bottom:6px;">Evolution</div>
+        <div id="evoContent"></div>
+      </div>
     </div>
     <div id="pokeResults"></div>
   </section>
 </main>
 
 <script>
-/* ---------- VERSION CONTROL (optional UI button) ---------- */
-const appVersion = "1.2.1";
+/* ---------- VERSION CONTROL & REFRESH BUTTON ---------- */
+function showPokemonImage(url){
+  const img = document.getElementById("pokeImg");
+  img.src = url;
+  img.classList.add("active");
+  img.classList.remove("pulse");
+}
+
+function hidePokemonImage(){
+  const img = document.getElementById("pokeImg");
+  img.src = "icon-192.png";
+  img.classList.remove("active");
+  img.classList.add("pulse");
+}
+const appVersion = "1.4.0";
 const refreshButton = document.createElement("button");
 refreshButton.textContent = "🔄 Refresh App";
-Object.assign(refreshButton.style, { position:"fixed", bottom:"10px", right:"10px", padding:"6px 10px",
-  fontSize:"0.9rem", borderRadius:"6px", border:"1px solid var(--accent)", background:"var(--card)", color:"var(--accent)", zIndex:"9999"});
+Object.assign(refreshButton.style, {
+  position:"fixed", bottom:"10px", right:"10px", padding:"6px 10px",
+  fontSize:"0.9rem", borderRadius:"8px", border:"1px solid var(--accent)",
+  background:"var(--card)", color:"var(--accent)", zIndex:"9999"
+});
 refreshButton.onclick = () => {
   localStorage.removeItem("poketype-version");
   if ('caches' in window) caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
@@ -173,7 +243,7 @@ Dark:"#705746",Steel:"#B7B7CE",Fairy:"#D685AD"};
 const types=Object.keys(typeChart);
 const t1=document.getElementById("type1"),t2=document.getElementById("type2");
 
-/* ---------- COLORFUL OPTIONS (desktop-capable) ---------- */
+/* Fill dropdowns (desktop shows colored options; mobile shows preview bars) */
 function addTypeOptions(sel){
   types.forEach(t=>{
     const opt=new Option(t,t);
@@ -185,7 +255,7 @@ function addTypeOptions(sel){
 }
 addTypeOptions(t1); addTypeOptions(t2);
 
-/* ---------- TAB SWITCH ---------- */
+/* Tabs */
 document.querySelectorAll(".tab").forEach(tab=>{
   tab.onclick=()=>{
     document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
@@ -195,7 +265,7 @@ document.querySelectorAll(".tab").forEach(tab=>{
   };
 });
 
-/* ---------- THEME TOGGLE ---------- */
+/* Theme toggle */
 let pokemonTheme=false;
 document.getElementById("themeToggle").onclick=()=>{
   pokemonTheme=!pokemonTheme;
@@ -204,7 +274,7 @@ document.getElementById("themeToggle").onclick=()=>{
   document.documentElement.style.setProperty("--text",pokemonTheme?"#000":"#fff");
 };
 
-/* ---------- PREVIEW BADGES ---------- */
+/* Preview bars under selects (mobile-friendly) */
 function updateTypePreview(){
   const preview=document.getElementById("typePreview");
   preview.innerHTML="";
@@ -217,14 +287,14 @@ function updateTypePreview(){
 }
 t1.onchange=updateTypePreview; t2.onchange=updateTypePreview;
 
-/* ---------- RESET BUTTON ---------- */
+/* Reset types */
 document.getElementById("resetBtn").onclick=()=>{
   t1.selectedIndex=0; t2.selectedIndex=0;
   document.getElementById("typeResults").innerHTML="";
   updateTypePreview();
 };
 
-/* ---------- EFFECTIVENESS CALCS ---------- */
+/* Calculations */
 function calcOffense(selTypes){
   const all=Object.keys(typeChart); const result={strong:[],weak:[],immune:[]};
   all.forEach(def=>{
@@ -256,7 +326,7 @@ function calcDefense(selTypes){
   return result;
 }
 
-/* ---------- RENDERERS ---------- */
+/* Renderers */
 function renderBoth(container,label,defense,offense){
   container.innerHTML="";
   const make=(l,d)=>{
@@ -286,7 +356,7 @@ function renderDefenseOnly(container,label,defense){
   container.innerHTML+=make(`No Effect Against ${label}`,defense.immune);
 }
 
-/* ---------- TYPE CHECK BUTTON ---------- */
+/* Type check */
 document.getElementById("checkBtn").onclick=()=>{
   const sel=[t1.value,t2.value].filter(Boolean);
   if(!sel.length) return;
@@ -295,7 +365,7 @@ document.getElementById("checkBtn").onclick=()=>{
   renderBoth(document.getElementById("typeResults"),label,def,off);
 };
 
-/* ---------- POKÉMON CHECKER ---------- */
+/* Pokémon search + images */
 const pokeInput=document.getElementById("pokeSearch"),
       pokeList=document.getElementById("pokeList");
 let pokedata=[];
@@ -317,35 +387,170 @@ pokeInput.addEventListener("input",async()=>{
     pokeList.append(div);
   });
 });
-async function selectPoke(p){
-  pokeList.innerHTML=""; pokeInput.value=p.name;
-  document.getElementById("pokeTypes").innerHTML="";
-  const img=document.getElementById("pokeImg");
-  const num=String(p.id).padStart(3,"0");
-  img.src=`https://raw.githubusercontent.com/fanzeyi/pokemon.json/master/images/${num}.png`;
-  img.hidden=false;
-  p.types.forEach(t=>{
-    const b=document.createElement("span");
-    b.className="type-badge"; b.textContent=t; b.style.background=typeColors[t];
-    document.getElementById("pokeTypes").append(b);
-  });
-  const def=calcDefense(p.types);
-  renderDefenseOnly(document.getElementById("pokeResults"),p.name,def);
 
-  // sync Type tab with Pokémon types and pre-render both views
-  t1.value=p.types[0]; t2.value=p.types[1]||""; updateTypePreview();
-  const label=p.types.join(" / "); const off=calcOffense(p.types);
-  renderBoth(document.getElementById("typeResults"),label,def,off);
+/* Evolution via PokéAPI */
+async function fetchSpeciesById(id){
+  const res=await fetch(`https://pokeapi.co/api/v2/pokemon-species/${id}/`);
+  if(!res.ok) throw new Error("species fetch failed");
+  return res.json();
+}
+async function fetchEvolutionChain(url){
+  const res=await fetch(url);
+  if(!res.ok) throw new Error("evo chain fetch failed");
+  return res.json();
+}
+function extractIdFromUrl(url){
+  const m=url.match(/\/(\d+)\/?$/); return m?parseInt(m[1],10):null;
+}
+function buildPaths(chain){
+  const paths=[];
+  function dfs(node, path){
+    const id=extractIdFromUrl(node.species.url);
+    const current=[...path, { name:node.species.name, id, details:node.evolution_details||[] }];
+    if(!node.evolves_to || node.evolves_to.length===0){ paths.push(current); return; }
+    node.evolves_to.forEach(next=>dfs(next, current));
+  }
+  dfs(chain, []);
+  return paths;
+}
+function formatMethod(details){
+  if(!details || !details[0]) return "";
+  const d=details[0];
+  if(d.trigger && d.trigger.name==="trade") return "Trade";
+  if(d.trigger && d.trigger.name==="use-item" && d.item) return `Use ${title(d.item.name)}`;
+  if(d.trigger && d.trigger.name==="level-up"){
+    let bits=[];
+    if(d.min_level!=null) bits.push(`Lv ${d.min_level}`);
+    if(d.time_of_day) bits.push(title(d.time_of_day));
+    if(d.min_happiness!=null) bits.push(`Happiness ${d.min_happiness}+`);
+    if(d.known_move_type) bits.push(`${title(d.known_move_type.name)} move`);
+    if(d.gender===1) bits.push("♀"); else if(d.gender===2) bits.push("♂");
+    if(d.location) bits.push(`@ ${title(d.location.name)}`);
+    return bits.join(" · ") || "Level up";
+  }
+  return title(d.trigger?.name||"");
+}
+function title(s){ return s.replace(/-/g," ").replace(/\b\w/g,c=>c.toUpperCase()); }
+function evoImgUrl(id){ return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`; }
+
+function renderEvolution(paths){
+  const container=document.getElementById("evoContent");
+  container.innerHTML="";
+  paths.forEach(path=>{
+    const line=document.createElement("div"); line.className="evo-line";
+    path.forEach((node, idx)=>{
+      const nodeDiv=document.createElement("div");
+      nodeDiv.className="evo-node";
+      nodeDiv.innerHTML=`<img src="${evoImgUrl(node.id)}" alt="${node.name}"><div class="evo-name">${title(node.name)}</div>`;
+      nodeDiv.onclick=()=>selectPokeById(node.id);
+      line.append(nodeDiv);
+      if(idx<path.length-1){
+        const next=path[idx+1];
+        const arrow=document.createElement("div"); arrow.className="evo-arrow"; arrow.textContent="→";
+        const method=document.createElement("div"); method.className="evo-method"; method.textContent=formatMethod(next.details);
+        const wrap=document.createElement("div"); wrap.style.display="flex"; wrap.style.flexDirection="column"; wrap.style.alignItems="center";
+        wrap.append(arrow); wrap.append(method);
+        line.append(wrap);
+      }
+    });
+    container.append(line);
+  });
 }
 
-/* ---------- POKÉMON RESET ---------- */
+/* Evo UI toggle */
+const evoToggle=document.getElementById("evoToggleBtn");
+let lastSelectedId=null;
+evoToggle.onclick=async()=>{
+  const card=document.getElementById("evoCard");
+  if(card.hidden){
+    if(!lastSelectedId){ alert("Pick a Pokémon first."); return; }
+    await loadEvolutionForId(lastSelectedId);
+    card.hidden=false; evoToggle.textContent="Hide Evolution Info";
+  } else {
+    card.hidden=true; evoToggle.textContent="Show Evolution Info";
+  }
+};
+async function loadEvolutionForId(id){
+  try{
+    const species=await fetchSpeciesById(id);
+    const evo=await fetchEvolutionChain(species.evolution_chain.url);
+    const paths=buildPaths(evo.chain);
+    renderEvolution(paths);
+    document.getElementById("evoTitle").textContent=`Evolution — ${title(species.name)}`;
+  }catch(e){
+    document.getElementById("evoContent").innerHTML="<em>Could not load evolution data.</em>";
+  }
+}
+
+/* Select Pokémon */
+async function selectPoke(p) {
+  lastSelectedId = p.id;
+  document.getElementById("evoCard").hidden = true;
+  evoToggle.textContent = "Show Evolution Info";
+
+  pokeList.innerHTML = "";
+  pokeInput.value = p.name;
+  document.getElementById("pokeTypes").innerHTML = "";
+
+  // Hide pulsing Poké Ball placeholder and show Pokémon artwork
+  const img = document.getElementById("pokeImg");
+  img.classList.remove("pulse");
+  img.classList.add("active");
+  img.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${p.id}.png`;
+
+  // Display Pokémon type badges
+  p.types.forEach(t => {
+    const b = document.createElement("span");
+    b.className = "type-badge";
+    b.textContent = t;
+    b.style.background = typeColors[t];
+    document.getElementById("pokeTypes").append(b);
+  });
+
+  // Calculate and display defense info
+  const def = calcDefense(p.types);
+  renderDefenseOnly(document.getElementById("pokeResults"), p.name, def);
+
+  // Sync Type tab and show both views
+  t1.value = p.types[0];
+  t2.value = p.types[1] || "";
+  updateTypePreview();
+  const label = p.types.join(" / ");
+  const off = calcOffense(p.types);
+  renderBoth(document.getElementById("typeResults"), label, def, off);
+}
+
+async function selectPokeById(id){
+  await loadData();
+  const found=pokedata.find(x=>x.id===id);
+  if(found){ selectPoke(found); return; }
+  const res=await fetch(`https://pokeapi.co/api/v2/pokemon/${id}/`);
+  const j=await res.json();
+  const types=j.types.map(t=>title(t.type.name));
+  const name=title(j.name);
+  selectPoke({id,name,types});
+}
+
+/* Pokémon reset */
 document.getElementById("pokeResetBtn").onclick=()=>{
-  pokeInput.value=""; document.getElementById("pokeList").innerHTML="";
-  document.getElementById("pokeTypes").innerHTML=""; document.getElementById("pokeResults").innerHTML="";
-  document.getElementById("pokeImg").hidden=true;
+  pokeInput.value="";
+  document.getElementById("pokeList").innerHTML="";
+  document.getElementById("pokeTypes").innerHTML="";
+  document.getElementById("pokeResults").innerHTML="";
+  hidePokemonImage(); // <-- restore pulsing Poké Ball placeholder
+  document.getElementById("evoCard").hidden=true;
+  evoToggle.textContent="Show Evolution Info";
 };
 
-/* ---------- PWA REGISTRATION (only over http/https) ---------- */
+/* Type check button (again here to ensure binding) */
+document.getElementById("checkBtn").onclick=()=>{
+  const sel=[t1.value,t2.value].filter(Boolean);
+  if(!sel.length) return;
+  const label=sel.join(" / "); const def=calcDefense(sel), off=calcOffense(sel);
+  renderBoth(document.getElementById("typeResults"),label,def,off);
+};
+
+/* PWA registration only over http(s) */
 if("serviceWorker" in navigator && location.protocol.startsWith("http")){
   navigator.serviceWorker.register("sw.js");
 }
