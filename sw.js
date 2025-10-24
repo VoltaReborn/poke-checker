@@ -1,5 +1,5 @@
 // Simple PWA Service Worker for PokéType Checker
-const CACHE_NAME = "poketype-cache-v2";
+const CACHE_NAME = "poketype-cache-v3";
 const ASSETS = [
   "./",
   "./index.html",
