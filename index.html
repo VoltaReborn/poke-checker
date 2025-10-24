@@ -120,12 +120,108 @@ button:hover { background:var(--accent); color:#000; }
   animation:none;
   filter:none;
 }
+
+/* === NEW FEATURES CSS (append at end) === */
+
+/* Home screen cards */
+.home-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 10px 0;
+}
+.home-card {
+  background: var(--card);
+  border: 1px solid var(--accent);
+  border-radius: 12px;
+  padding: 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+}
+.home-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(0,0,0,.25);
+  border-color: #ffd36a;
+}
+.home-card .title { font-weight: 700; margin-bottom: 6px; }
+.home-card .desc { font-size: .9rem; opacity: .9; }
+
+/* Shared layouts */
+.tool-wrap { display:flex; flex-direction:column; gap:10px; align-items:center; }
+.tool-row { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
+.tool-wide { width: 92%; max-width: 420px; }
+
+/* Result grids */
+.poke-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  width: 100%;
+}
+.poke-card {
+  background: var(--card);
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  padding: 8px;
+  text-align: center;
+  cursor: pointer;
+}
+.poke-card img { width: 72px; height: 72px; object-fit: contain; display:block; margin: 0 auto 4px; }
+.poke-card .nm { font-size: .85rem; }
+
+/* VS panel */
+.vs-wrap { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+.vs-col { flex: 1 1 280px; min-width: 260px; background: var(--card); border: 1px solid var(--accent); border-radius: 10px; padding: 10px; }
+.vs-title { font-weight: 700; margin-bottom: 6px; }
+.vs-chip { display:inline-block; margin: 2px; padding: 3px 8px; border-radius: 12px; color:#fff; font-weight:600; font-size:.85rem; }
+
+/* Team coverage */
+.team-wrap { display:flex; flex-direction:column; gap:12px; align-items:center; }
+.team-bar { display:flex; gap:6px; flex-wrap:wrap; justify-content:center; }
+.team-slot {
+  display:flex; align-items:center; gap:8px;
+  background: var(--card); border:1px solid var(--accent); border-radius:8px; padding:6px 8px;
+}
+.team-slot img { width:44px; height:44px; object-fit:contain; }
+.team-slot .rm { background:none; border:1px solid var(--accent); color:var(--accent); padding:4px 6px; border-radius:6px; cursor:pointer; }
+.team-actions { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
+.coverage-row { display:flex; gap:6px; flex-wrap:wrap; justify-content:center; }
+.coverage-badge {
+  display:inline-block; border-radius: 12px; padding:4px 8px; color:#fff; font-weight:700; font-size:.85rem;
+}
+.coverage-title { font-weight: 700; margin-top: 6px; text-align:center; }
+
+/* Responsive tweaks */
+@media(min-width: 860px){
+  .home-grid { grid-template-columns: repeat(4, 1fr); }
+  .poke-grid { grid-template-columns: repeat(6, 1fr); }
+}
+
+/* HOME-ONLY NAV (no top bar) */
+#modeTabs { display: none !important; }
+
+.home-btn {
+  align-self: center;
+  margin: 4px 0 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--accent);
+  background: var(--card);
+  color: var(--text);
+  font-weight: 600;
+  cursor: pointer;
+}
+.home-btn:hover {
+  background: var(--accent);
+  color: #000;
+}
 </style>
 </head>
 <body>
 <header>
   <h1>PokéType Checker</h1>
-  <button id="themeToggle" title="Toggle Theme">🎨</button>
+  <button id="themeToggle" title="Toggle Theme">☀️</button>
 </header>
 
 <div id="modeTabs">
@@ -135,7 +231,7 @@ button:hover { background:var(--accent); color:#000; }
 
 <main>
   <!-- TYPE SECTION (both perspectives) -->
-  <section id="typeSection" class="section active">
+  <section id="typeSection" class="section">
     <div id="typeControls">
       <label>Type 1:
         <select id="type1"></select>
@@ -266,12 +362,14 @@ document.querySelectorAll(".tab").forEach(tab=>{
 });
 
 /* Theme toggle */
-let pokemonTheme=false;
-document.getElementById("themeToggle").onclick=()=>{
-  pokemonTheme=!pokemonTheme;
-  document.documentElement.style.setProperty("--bg",pokemonTheme?"#fff":"#0a1224");
-  document.documentElement.style.setProperty("--card",pokemonTheme?"#f4f4f4":"#15254b");
-  document.documentElement.style.setProperty("--text",pokemonTheme?"#000":"#fff");
+let lightTheme=false;
+const themeBtn=document.getElementById("themeToggle");
+themeBtn.onclick=()=>{
+  lightTheme=!lightTheme;
+  document.documentElement.style.setProperty("--bg",lightTheme?"#fff":"#0a1224");
+  document.documentElement.style.setProperty("--card",lightTheme?"#f4f4f4":"#15254b");
+  document.documentElement.style.setProperty("--text",lightTheme?"#000":"#fff");
+  themeBtn.textContent = lightTheme ? "🌙" : "☀️";
 };
 
 /* Preview bars under selects (mobile-friendly) */
@@ -554,6 +652,461 @@ document.getElementById("checkBtn").onclick=()=>{
 if("serviceWorker" in navigator && location.protocol.startsWith("http")){
   navigator.serviceWorker.register("sw.js");
 }
+
+/* === NEW FEATURES JS (append at end) === */
+/* This code assumes your existing variables/functions:
+   - types, typeColors, typeChart
+   - calcDefense(selTypes), calcOffense(selTypes)
+   - loadData(), pokedata, selectPoke(p), selectPokeById(id)
+   - title(s) helper (if you have it; fallback inline if not)
+*/
+
+/* ---------- Helper: title-case fallback if missing ---------- */
+if (typeof title !== "function") {
+  var title = (s) => s.replace(/-/g," ").replace(/\b\w/g, c => c.toUpperCase());
+}
+
+/* ---------- Helper: images ---------- */
+function artUrl(id){
+  return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
+}
+
+/* ---------- Helper: multiplier from one attacking type vs defender types ---------- */
+function multAtkVsDefType(atk, defTypes){
+  let mult = 1;
+  defTypes.forEach(def=>{
+    if (typeChart[def].weak.includes(atk))   mult *= 2;
+    if (typeChart[def].resist.includes(atk)) mult *= 0.5;
+    if (typeChart[def].immune.includes(atk)) mult *= 0;
+  });
+  return mult;
+}
+
+/* ---------- Best attack from a set of attacker types vs defender types ---------- */
+function bestAttack(attackerTypes, defenderTypes){
+  let best = {mult: 1, types: []};
+  attackerTypes.forEach(atk=>{
+    const m = multAtkVsDefType(atk, defenderTypes);
+    if (m > best.mult) { best = {mult: m, types: [atk]}; }
+    else if (m === best.mult) { best.types.push(atk); }
+  });
+  // unique
+  best.types = [...new Set(best.types)];
+  return best;
+}
+
+// === GLOBAL TEAM STORAGE ===
+const TEAM_KEY = "poketype-team-v1";
+let team = [];
+
+function saveTeam() {
+  localStorage.setItem(TEAM_KEY, JSON.stringify(team));
+}
+function loadTeam() {
+  try {
+    const raw = localStorage.getItem(TEAM_KEY);
+    const parsed = JSON.parse(raw);
+    team = Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    team = [];
+  }
+}
+
+/* ---------- Tabs: make a new Home tab + three feature tabs/sections ---------- */
+(function injectFeatureTabs(){
+  const tabsWrap = document.getElementById("modeTabs");
+  const main = document.querySelector("main");
+  if (!tabsWrap || !main) return;
+
+  // Avoid duplicate injection
+  if (document.getElementById("homeSection")) return;
+
+  // Build tabs
+  const mkTab = (txt, targetId) => {
+    const div = document.createElement("div");
+    div.className = "tab";
+    div.dataset.target = targetId;
+    div.textContent = txt;
+    return div;
+  };
+
+  const homeTab   = mkTab("Home",      "homeSection");
+  const comboTab  = mkTab("Type Combo","comboSection");
+  const vsTab     = mkTab("Matchup VS","vsSection");
+  const teamTab   = mkTab("Team",      "teamSection");
+
+  // Insert Home at the front
+  tabsWrap.prepend(homeTab);
+  tabsWrap.append(comboTab, vsTab, teamTab);
+
+  // Sections
+  const home = document.createElement("section");
+  home.id = "homeSection";
+  home.className = "section";
+  home.innerHTML = `
+    <div class="resultCard">
+      <div class="home-grid">
+        <div class="home-card" data-go="typeSection">
+          <div class="title">Type Checker</div>
+          <div class="desc">Pick a type or pair to explore counters and coverage.</div>
+        </div>
+        <div class="home-card" data-go="pokeSection">
+          <div class="title">Pokémon Checker</div>
+          <div class="desc">Look up a Pokémon’s weaknesses and evolution line.</div>
+        </div>
+        <div class="home-card" data-go="comboSection">
+          <div class="title">Type Combo Search</div>
+          <div class="desc">Find Pokémon with a single or dual typing.</div>
+        </div>
+        <div class="home-card" data-go="vsSection">
+          <div class="title">Matchup (VS)</div>
+          <div class="desc">Compare two Pokémon for type advantage.</div>
+        </div>
+        <div class="home-card" data-go="teamSection">
+          <div class="title">Team Coverage</div>
+          <div class="desc">Build a team and see weaknesses & coverage.</div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const combo = document.createElement("section");
+  combo.id = "comboSection";
+  combo.className = "section";
+  combo.innerHTML = `
+    <div class="resultCard tool-wrap">
+      <div class="tool-row">
+        <select id="comboType1" class="tool-wide"></select>
+        <select id="comboType2" class="tool-wide">
+          <option value="">(none)</option>
+        </select>
+      </div>
+      <div class="tool-row">
+        <button id="comboSearchBtn">Search</button>
+        <button id="comboClearBtn">Clear</button>
+      </div>
+      <div id="comboResults" class="poke-grid"></div>
+    </div>
+  `;
+
+  const vs = document.createElement("section");
+  vs.id = "vsSection";
+  vs.className = "section";
+  vs.innerHTML = `
+    <div class="resultCard">
+      <div class="vs-wrap">
+        <div class="vs-col">
+          <div class="vs-title">Pokémon A</div>
+          <input id="vsAInput" placeholder="Search Pokémon A..." class="tool-wide" autocomplete="off">
+          <div id="vsAList"></div>
+          <div id="vsASummary"></div>
+        </div>
+        <div class="vs-col">
+          <div class="vs-title">Pokémon B</div>
+          <input id="vsBInput" placeholder="Search Pokémon B..." class="tool-wide" autocomplete="off">
+          <div id="vsBList"></div>
+          <div id="vsBSummary"></div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const teamSection = document.createElement("section");
+  teamSection.id = "teamSection";
+  teamSection.className = "section";
+  teamSection.innerHTML = `
+    <div class="resultCard team-wrap">
+      <input id="teamInput" placeholder="Add Pokémon to team..." class="tool-wide" autocomplete="off">
+      <div id="teamSuggest"></div>
+      <div id="teamSlots" class="team-bar"></div>
+      <div class="team-actions">
+        <button id="saveTeamBtn">Save Team</button>
+        <button id="clearTeamBtn">Clear Team</button>
+      </div>
+      <div class="resultCard" id="teamDefense"></div>
+      <div class="resultCard" id="teamOffense"></div>
+    </div>
+  `;
+
+  // Put Home first
+  const firstOld = document.getElementById("typeSection");
+  main.prepend(home);
+  main.append(combo, vs, teamSection);
+
+  // Home navigation
+  home.querySelectorAll(".home-card").forEach(card=>{
+    card.onclick = () => {
+      const target = card.getAttribute("data-go");
+      switchTab(target);
+    };
+  });
+
+  // Extend tab behavior to include the new tabs
+  [homeTab, comboTab, vsTab, teamTab].forEach(tab=>{
+    tab.onclick = () => switchTab(tab.dataset.target);
+  });
+
+  // Helper to switch tabs/sections
+  function switchTab(targetId){
+    document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+    document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+    const tab = [...document.querySelectorAll(".tab")].find(t=>t.dataset.target===targetId);
+    if (tab) tab.classList.add("active");
+    const sec = document.getElementById(targetId);
+    if (sec) sec.classList.add("active");
+  }
+
+  // Fill combo selects with type options
+  function fillTypeOptions(sel){
+    types.forEach(t=>{
+      const opt = new Option(t,t);
+      opt.style.background = typeColors[t];
+      opt.style.color = "#fff";
+      opt.style.fontWeight = "600";
+      sel.add(opt);
+    });
+  }
+  fillTypeOptions(combo.querySelector("#comboType1"));
+  fillTypeOptions(combo.querySelector("#comboType2"));
+
+  /* ---------- TYPE COMBO SEARCH ---------- */
+  const comboType1 = document.getElementById("comboType1");
+  const comboType2 = document.getElementById("comboType2");
+  const comboResults = document.getElementById("comboResults");
+  document.getElementById("comboSearchBtn").onclick = async ()=>{
+    await loadData();
+    const a = comboType1.value;
+    const b = comboType2.value;
+    if (!a && !b) { comboResults.innerHTML = ""; return; }
+    const match = pokedata.filter(p=>{
+      if (b) {
+        // dual type (any order)
+        return p.types.length===2 && ((p.types[0]===a&&p.types[1]===b)||(p.types[0]===b&&p.types[1]===a));
+      }
+      // single type match (any slot)
+      return p.types.includes(a);
+    }).slice(0, 200);
+    comboResults.innerHTML = "";
+    match.forEach(p=>{
+      const card = document.createElement("div");
+      card.className = "poke-card";
+      card.innerHTML = `<img src="${artUrl(p.id)}"><div class="nm">${p.name}</div>`;
+      card.onclick = () => {
+        window.switchTab("pokeSection");
+        selectPoke(p);
+        };
+      comboResults.append(card);
+    });
+  };
+  document.getElementById("comboClearBtn").onclick = ()=>{ comboType1.selectedIndex = 0; comboType2.selectedIndex = 0; comboResults.innerHTML = ""; };
+
+  /* ---------- MATCHUP (VS) ---------- */
+  const vsAInput = document.getElementById("vsAInput");
+  const vsBInput = document.getElementById("vsBInput");
+  const vsAList = document.getElementById("vsAList");
+  const vsBList = document.getElementById("vsBList");
+  const vsASummary = document.getElementById("vsASummary");
+  const vsBSummary = document.getElementById("vsBSummary");
+  let vsA=null, vsB=null;
+
+  async function suggestInto(input, list, setter){
+    await loadData();
+    const q = input.value.toLowerCase();
+    list.innerHTML = "";
+    if (!q) return;
+    pokedata.filter(p=>p.name.toLowerCase().includes(q)).slice(0,12).forEach(p=>{
+      const div = document.createElement("div");
+      div.textContent = p.name;
+      div.style.cursor = "pointer";
+      div.onclick = ()=>{ setter(p); list.innerHTML=""; input.value=p.name; };
+      list.append(div);
+    });
+  }
+  vsAInput.addEventListener("input",()=>suggestInto(vsAInput, vsAList, p=>{vsA=p; renderVS();}));
+  vsBInput.addEventListener("input",()=>suggestInto(vsBInput, vsBList, p=>{vsB=p; renderVS();}));
+
+  function renderVS(){
+    vsASummary.innerHTML = "";
+    vsBSummary.innerHTML = "";
+    if (!vsA || !vsB) return;
+
+    const aBest = bestAttack(vsA.types, vsB.types); // A's best move vs B
+    const bBest = bestAttack(vsB.types, vsA.types); // B's best move vs A
+
+    const mk = (who, self, opp, best) => {
+      const box = who==="A" ? vsASummary : vsBSummary;
+      const head = document.createElement("div");
+      head.className = "vs-title";
+      head.textContent = `${self.name} → ${opp.name}`;
+      const row = document.createElement("div");
+      row.className = "coverage-row";
+      best.types.forEach(t=>{
+        const span = document.createElement("span");
+        span.className = "vs-chip";
+        span.style.background = typeColors[t];
+        span.textContent = `${t} ×${best.mult}`;
+        row.append(span);
+      });
+      box.append(head, row);
+    };
+    mk("A", vsA, vsB, aBest);
+    mk("B", vsB, vsA, bBest);
+  }
+
+  /* ---------- TEAM COVERAGE ---------- */
+  const teamInput = document.getElementById("teamInput");
+  const teamSuggest = document.getElementById("teamSuggest");
+  const teamSlots = document.getElementById("teamSlots");
+  const teamDefense = document.getElementById("teamDefense");
+  const teamOffense = document.getElementById("teamOffense");
+
+  async function teamSuggestHandler(){
+    await loadData();
+    const q = teamInput.value.toLowerCase();
+    teamSuggest.innerHTML = "";
+    if (!q) return;
+    pokedata.filter(p=>p.name.toLowerCase().includes(q)).slice(0,12).forEach(p=>{
+      const d = document.createElement("div");
+      d.textContent = p.name;
+      d.style.cursor = "pointer";
+      d.onclick = ()=>{ addToTeam(p); teamSuggest.innerHTML=""; teamInput.value=""; };
+      teamSuggest.append(d);
+    });
+  }
+  teamInput.addEventListener("input", teamSuggestHandler);
+
+  function addToTeam(p){
+    if (team.length >= 6) return;
+    // avoid dup by id
+    if (team.some(x=>x.id===p.id)) return;
+    team.push({id:p.id, name:p.name, types:p.types});
+    renderTeam();
+  }
+  function removeFromTeam(id){
+    team = team.filter(x=>x.id!==id);
+    renderTeam();
+  }
+
+  function renderTeam(){
+    if (!Array.isArray(team)) team = [];
+    // slots
+    teamSlots.innerHTML = "";
+    team.forEach(p=>{
+      const slot = document.createElement("div");
+      slot.className = "team-slot";
+      slot.innerHTML = `<img src="${artUrl(p.id)}"><div>${p.name}</div>`;
+      const rm = document.createElement("button");
+      rm.className = "rm"; rm.textContent = "Remove";
+      rm.onclick = ()=>removeFromTeam(p.id);
+      slot.append(rm);
+      teamSlots.append(slot);
+    });
+
+    // defense: for each attack type, count how many mons are weak/resist/immune
+    const atkTypes = Object.keys(typeChart);
+    const counts = atkTypes.map(atk=>{
+      let weak=0,res=0,imm=0;
+      team.forEach(mon=>{
+        const m = multAtkVsDefType(atk, mon.types);
+        if (m>1) weak++;
+        else if (m===0) imm++;
+        else if (m<1) res++;
+      });
+      return {atk, weak, res, imm};
+    });
+    counts.sort((a,b)=>b.weak - a.weak); // top threats first
+
+    teamDefense.innerHTML = `<div class="coverage-title">Team Defense: Top Threats</div>`;
+    const defRow = document.createElement("div");
+    defRow.className = "coverage-row";
+    counts.slice(0,8).forEach(c=>{
+      const badge = document.createElement("span");
+      badge.className = "coverage-badge";
+      badge.style.background = typeColors[c.atk];
+      badge.textContent = `${c.atk}: ${c.weak} weak / ${c.res} resist / ${c.imm} immune`;
+      defRow.append(badge);
+    });
+    teamDefense.append(defRow);
+
+    // offense: which defender types are covered by at least one team type
+    const defTypes = Object.keys(typeChart);
+    const covered = new Set();
+    team.forEach(mon=>{
+      defTypes.forEach(def=>{
+        const m = bestAttack(mon.types, [def]).mult; // mono-def for coverage
+        if (m>1) covered.add(def);
+      });
+    });
+    const uncovered = defTypes.filter(d=>!covered.has(d));
+
+    teamOffense.innerHTML = `<div class="coverage-title">Team Offense: Coverage Map</div>`;
+    const offRow1 = document.createElement("div");
+    offRow1.className = "coverage-row";
+    covered.forEach(d=>{
+      const b = document.createElement("span");
+      b.className = "coverage-badge";
+      b.style.background = typeColors[d];
+      b.textContent = d;
+      offRow1.append(b);
+    });
+    const offRow2 = document.createElement("div");
+    offRow2.className = "coverage-row";
+    uncovered.forEach(d=>{
+      const b = document.createElement("span");
+      b.className = "coverage-badge";
+      b.style.background = "#444";
+      b.textContent = d;
+      offRow2.append(b);
+    });
+    teamOffense.append(offRow1, offRow2);
+  }
+
+  // Buttons
+  document.getElementById("saveTeamBtn").onclick = ()=>{ saveTeam(); };
+  document.getElementById("clearTeamBtn").onclick = ()=>{ team = []; renderTeam(); saveTeam(); };
+
+  // Initialize team from localStorage
+  loadTeam(); renderTeam();
+})();
+
+/* === HOME-ONLY NAVIGATION (fixed timing) === */
+(function setupHomeNavigation(){
+  // Hide tab bar
+  const tabs = document.getElementById("modeTabs");
+  if (tabs) tabs.style.display = "none";
+
+  // Global switch function
+  window.switchTab = function(targetId){
+    document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+    const sec = document.getElementById(targetId);
+    if (sec) sec.classList.add("active");
+  };
+
+  // Helper to ensure a Home button exists at the top of each section
+  function ensureHomeButtons(){
+    ["typeSection","pokeSection","comboSection","vsSection","teamSection"].forEach(id=>{
+      const sec = document.getElementById(id);
+      if (sec && !sec.querySelector(".home-btn")) {
+        const btn = document.createElement("button");
+        btn.className = "home-btn";
+        btn.textContent = "← Home";
+        btn.onclick = () => window.switchTab("homeSection");
+        sec.prepend(btn);
+      }
+    });
+  }
+
+  // Run once immediately (covers sections that already exist)
+  ensureHomeButtons();
+
+  // Also run whenever sections are injected/changed
+  const observer = new MutationObserver(ensureHomeButtons);
+  observer.observe(document.querySelector("main"), {childList:true, subtree:true});
+
+  // Go to Home on startup
+  window.switchTab("homeSection");
+})();
+
 </script>
 </body>
 </html>
