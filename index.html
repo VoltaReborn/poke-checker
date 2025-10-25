@@ -312,6 +312,24 @@ button:hover { background:var(--accent); color:#000; }
   align-items: center;
 }
 
+.cat-tooltip {
+  position: absolute;
+  bottom: 120%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(10, 18, 36, 0.95);
+  color: #fdd066;
+  border: 1px solid rgba(255, 200, 100, 0.4);
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  opacity: 0;
+  pointer-events: none;
+  white-space: nowrap;
+  transition: opacity 0.15s ease-in-out;
+  box-shadow: 0 0 6px rgba(255, 200, 100, 0.3);
+}
+
 .cat-wrapper::after {
   content: attr(title);
   position: absolute;
@@ -423,6 +441,36 @@ function hidePokemonImage(){
 const appVersion = "1.4.0";
 const refreshButton = document.createElement("button");
 refreshButton.textContent = "🔄 Refresh App";
+// show only on Home
+refreshButton.id = "refreshAppBtn";
+
+function updateRefreshVisibility(){
+  const home = document.getElementById("homeSection");
+  const onHome = home && home.classList && home.classList.contains("active") && !home.hidden;
+  // use the actual button variable you already have
+  refreshButton.style.display = onHome ? "block" : "none";
+}
+
+// set initial state (will correct as soon as tabs switch)
+updateRefreshVisibility();
+// ensure visibility updates whenever tabs change
+(function hookRefreshVisibility(){
+  if (typeof window.switchTab === "function") {
+    const _switch = window.switchTab;
+    window.switchTab = function(targetId){
+      _switch(targetId);
+      updateRefreshVisibility();
+    };
+  } else {
+    // Fallback: watch for section visibility changes if switchTab isn't present
+    const main = document.querySelector("main");
+    if (main) {
+      const obs = new MutationObserver(() => updateRefreshVisibility());
+      obs.observe(main, { attributes:true, subtree:true, attributeFilter:["class","hidden"] });
+    }
+  }
+})();
+
 Object.assign(refreshButton.style, {
   position:"fixed", bottom:"10px", right:"10px", padding:"6px 10px",
   fontSize:"0.9rem", borderRadius:"8px", border:"1px solid var(--accent)",
@@ -1591,7 +1639,7 @@ shiny.hidden = false;
         <td><span class="move-type-badge" style="background:${color}">${m.type}</span></td>
         <td>${m.power}</td>
         <td>
-        <div class="cat-wrapper" title="${catLabel}">
+        <div class="cat-wrapper" data-label="${catLabel}">
             <img src="${icon}" alt="${catLabel}" class="cat-icon">
         </div>
         </td>
@@ -1609,6 +1657,23 @@ selectPoke=async function(p){
   await oldSelectPoke(p);
   showMoves(p.name,p.id);
 };
+
+// Tooltip behavior fix for mobile
+document.addEventListener("click", (e) => {
+  const wrap = e.target.closest(".cat-wrapper");
+  document.querySelectorAll(".cat-tooltip").forEach(t => t.remove());
+  if (wrap && wrap.dataset.label) {
+    const tip = document.createElement("div");
+    tip.className = "cat-tooltip";
+    tip.textContent = wrap.dataset.label;
+    wrap.appendChild(tip);
+    requestAnimationFrame(() => tip.style.opacity = 1);
+    setTimeout(() => {
+      tip.style.opacity = 0;
+      setTimeout(() => tip.remove(), 200);
+    }, 1500);
+  }
+});
 
 </script>
 </body>
