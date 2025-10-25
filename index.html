@@ -312,6 +312,11 @@ button:hover { background:var(--accent); color:#000; }
   align-items: center;
 }
 
+.cat-wrapper:focus,
+.cat-wrapper img:focus {
+  outline: none;
+}
+
 .cat-tooltip {
   position: absolute;
   bottom: 120%;
@@ -330,34 +335,10 @@ button:hover { background:var(--accent); color:#000; }
   box-shadow: 0 0 6px rgba(255, 200, 100, 0.3);
 }
 
+/* Remove default pseudo tooltip — handled entirely via JS now */
 .cat-wrapper::after {
-  content: attr(title);
-  position: absolute;
-  bottom: 120%;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(10, 18, 36, 0.95);
-  color: #fdd066;
-  border: 1px solid rgba(255, 200, 100, 0.4);
-  padding: 3px 8px;
-  border-radius: 6px;
-  font-size: 11px;
-  opacity: 0;
-  pointer-events: none;
-  white-space: nowrap;
-  transition: opacity 0.15s ease-in-out;
-  box-shadow: 0 0 6px rgba(255, 200, 100, 0.3);
-}
-
-/* hover on desktop */
-.cat-wrapper:hover::after {
-  opacity: 1;
-}
-
-/* tap on mobile — show briefly, then auto-hide */
-.cat-wrapper:active::after {
-  opacity: 1;
-  animation: hideTooltip 1.5s forwards;
+  display: none !important;
+  content: none !important;
 }
 
 @keyframes hideTooltip {
@@ -1544,16 +1525,18 @@ const versionGroupToGen = {
   div.className="moves-panel";
   div.innerHTML=`
     <div class="moves-header">
-      <h3 style="margin:0;">Level-Up Moves</h3>
-      <select id="genSelect">
+        <h3 style="margin:0;">Level-Up Moves</h3>
+        <select id="genSelect">
         ${Array.from({length:9},(_,i)=>`<option value="${i+1}">Gen ${i+1}</option>`).join("")}
-      </select>
+        </select>
     </div>
     <table class="moves-table" id="movesTable">
-      <thead><tr><th>Lvl</th><th>Move</th><th>Type</th><th>Power</th><th>Category</th></tr></thead>
-      <tbody><tr><td colspan="5">No data yet.</td></tr></tbody>
+        <thead><tr><th>Lvl</th><th>Move</th><th>Type</th><th>Power</th><th>Category</th></tr></thead>
+        <tbody><tr><td colspan="5">No data yet.</td></tr></tbody>
     </table>`;
-  sec.appendChild(div);
+    const genSelect = div.querySelector("#genSelect");
+    genSelect.value = "9"; // ✅ default to Gen 9
+    sec.appendChild(div);
 })();
 
 // Render shiny + fetch moves
