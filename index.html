@@ -307,7 +307,9 @@ button:hover { background:var(--accent); color:#000; }
 
 .cat-wrapper {
   position: relative;
-  display: inline-block;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .cat-wrapper::after {
@@ -316,20 +318,34 @@ button:hover { background:var(--accent); color:#000; }
   bottom: 120%;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(20, 20, 30, 0.9);
-  color: #fff;
-  padding: 2px 6px;
+  background: rgba(10, 18, 36, 0.95);
+  color: #fdd066;
+  border: 1px solid rgba(255, 200, 100, 0.4);
+  padding: 3px 8px;
   border-radius: 6px;
   font-size: 11px;
   opacity: 0;
   pointer-events: none;
   white-space: nowrap;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.15s ease-in-out;
+  box-shadow: 0 0 6px rgba(255, 200, 100, 0.3);
 }
 
-.cat-wrapper:hover::after,
+/* hover on desktop */
+.cat-wrapper:hover::after {
+  opacity: 1;
+}
+
+/* tap on mobile — show briefly, then auto-hide */
 .cat-wrapper:active::after {
   opacity: 1;
+  animation: hideTooltip 1.5s forwards;
+}
+
+@keyframes hideTooltip {
+  0% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { opacity: 0; }
 }
 
 </style>
