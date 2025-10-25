@@ -287,6 +287,16 @@ button:hover { background:var(--accent); color:#000; }
   flex-wrap:wrap;
 }
 
+#pokeCheckerTop img {
+  position: relative;
+  max-width: 140px;
+  display: block;
+  margin: 0 auto;
+  z-index: 1;
+}
+
+#evoToggle.disabled { opacity: .5; pointer-events: none; }
+
 </style>
 </head>
 <body>
@@ -542,21 +552,34 @@ document.getElementById("checkBtn").onclick=()=>{
 const pokeInput=document.getElementById("pokeSearch"),
       pokeList=document.getElementById("pokeList");
 let pokedata=[];
-async function loadData(){
-  if(pokedata.length) return;
-  const res=await fetch("https://raw.githubusercontent.com/fanzeyi/pokemon.json/master/pokedex.json");
-  const list=await res.json();
-  pokedata=list.map(p=>({name:p.name.english,types:p.type,id:p.id}));
+async function loadData() {
+  if (pokedata.length) return;
+  const res = await fetch("https://pokeapi.co/api/v2/pokemon?limit=2000");
+  const list = await res.json();
+  pokedata = list.results.map((p, idx) => ({
+    name: title(p.name),
+    id: idx + 1
+  }));
 }
-pokeInput.addEventListener("input",async()=>{
+
+pokeInput.addEventListener("input", async () => {
   await loadData();
-  const q=pokeInput.value.toLowerCase();
-  pokeList.innerHTML="";
-  if(!q) return;
-  pokedata.filter(p=>p.name.toLowerCase().includes(q)).slice(0,10).forEach(p=>{
-    const div=document.createElement("div");
-    div.textContent=p.name; div.style.cursor="pointer";
-    div.onclick=()=>selectPoke(p);
+  const q = pokeInput.value.toLowerCase();
+  pokeList.innerHTML = "";
+  if (!q) return;
+
+  // exclude forms (names with '-') and cap to real species range
+  const filtered = pokedata.filter(p =>
+    p.name.toLowerCase().includes(q) &&
+    !p.name.includes("-") &&
+    p.id <= 1025
+  );
+
+  filtered.slice(0, 10).forEach(p => {
+    const div = document.createElement("div");
+    div.textContent = p.name;
+    div.style.cursor = "pointer";
+    div.onclick = () => selectPokeById(p.id);
     pokeList.append(div);
   });
 });
@@ -572,9 +595,15 @@ async function fetchEvolutionChain(url){
   if(!res.ok) throw new Error("evo chain fetch failed");
   return res.json();
 }
-function extractIdFromUrl(url){
-  const m=url.match(/\/(\d+)\/?$/); return m?parseInt(m[1],10):null;
+// extract numeric id from a PokeAPI URL
+function extractIdFromUrl(u) {
+  if (!u) return null;
+  const m = u.match(/\/(\d+)\/?$/);
+  return m ? parseInt(m[1], 10) : null;
 }
+// cheap title case
+function cap(s){ return s.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase()); }
+
 function buildPaths(chain){
   const paths=[];
   function dfs(node, path){
@@ -586,23 +615,30 @@ function buildPaths(chain){
   dfs(chain, []);
   return paths;
 }
-function formatMethod(details){
-  if(!details || !details[0]) return "";
-  const d=details[0];
-  if(d.trigger && d.trigger.name==="trade") return "Trade";
-  if(d.trigger && d.trigger.name==="use-item" && d.item) return `Use ${title(d.item.name)}`;
-  if(d.trigger && d.trigger.name==="level-up"){
-    let bits=[];
-    if(d.min_level!=null) bits.push(`Lv ${d.min_level}`);
-    if(d.time_of_day) bits.push(title(d.time_of_day));
-    if(d.min_happiness!=null) bits.push(`Happiness ${d.min_happiness}+`);
-    if(d.known_move_type) bits.push(`${title(d.known_move_type.name)} move`);
-    if(d.gender===1) bits.push("♀"); else if(d.gender===2) bits.push("♂");
-    if(d.location) bits.push(`@ ${title(d.location.name)}`);
+function formatMethod(details) {
+  if (!details || !details[0]) return "";
+  const d = details[0];
+  const bits = [];
+
+  if (d.trigger && d.trigger.name === "trade") return "Trade";
+
+  if (d.trigger && d.trigger.name === "use-item" && d.item)
+    return `Use ${title(d.item.name)}`;
+
+  if (d.trigger && d.trigger.name === "level-up") {
+    if (d.min_level != null) bits.push(`Lv ${d.min_level}`);
+    if (d.time_of_day) bits.push(title(d.time_of_day));
+    if (d.min_happiness != null) bits.push(`Happiness ${d.min_happiness}+`);
+    if (d.known_move_type) bits.push(`${title(d.known_move_type.name)} move`);
+    if (d.gender === 1) bits.push("♀");
+    else if (d.gender === 2) bits.push("♂");
+    if (d.location) bits.push(`@ ${title(d.location.name)}`);
     return bits.join(" · ") || "Level up";
   }
-  return title(d.trigger?.name||"");
+
+  return title(d.trigger?.name || "");
 }
+
 function title(s){ return s.replace(/-/g," ").replace(/\b\w/g,c=>c.toUpperCase()); }
 function evoImgUrl(id){ return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`; }
 
@@ -633,64 +669,151 @@ function renderEvolution(paths){
 /* Evo UI toggle */
 const evoToggle=document.getElementById("evoToggleBtn");
 let lastSelectedId=null;
-evoToggle.onclick=async()=>{
-  const card=document.getElementById("evoCard");
-  if(card.hidden){
-    if(!lastSelectedId){ alert("Pick a Pokémon first."); return; }
+evoToggle.onclick = async ()=>{
+  if (!lastSelectedId) return; // nothing selected
+  const card = document.getElementById("evoCard");
+  if (card.hidden) {
     await loadEvolutionForId(lastSelectedId);
-    card.hidden=false; evoToggle.textContent="Hide Evolution Info";
+    card.hidden = false;
+    evoToggle.textContent = "Hide Evolution Info";
   } else {
-    card.hidden=true; evoToggle.textContent="Show Evolution Info";
+    card.hidden = true;
+    evoToggle.textContent = "Show Evolution Info";
   }
 };
+
 async function loadEvolutionForId(id){
-  try{
-    const species=await fetchSpeciesById(id);
-    const evo=await fetchEvolutionChain(species.evolution_chain.url);
-    const paths=buildPaths(evo.chain);
-    renderEvolution(paths);
-    document.getElementById("evoTitle").textContent=`Evolution — ${title(species.name)}`;
-  }catch(e){
-    document.getElementById("evoContent").innerHTML="<em>Could not load evolution data.</em>";
+  const card = document.getElementById("evoCard");
+  if (!card) return;
+
+  // ensure evoCard skeleton exists
+  if (!document.getElementById("evoTitle") || !document.getElementById("evoContent")) {
+    card.innerHTML = `
+      <div id="evoTitle" style="font-weight:700;margin-bottom:6px;">Evolution</div>
+      <div id="evoContent"></div>
+    `;
+  }
+
+  const titleEl = document.getElementById("evoTitle");
+  const contentEl = document.getElementById("evoContent");
+
+  try {
+    contentEl.innerHTML = `<em>Loading…</em>`;
+
+    const speciesRes = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${id}/`);
+    const species = await speciesRes.json();
+    const evoRes = await fetch(species.evolution_chain.url);
+    const evo = await evoRes.json();
+
+    // Build paths with full evolution_details
+    const paths = [];
+    function dfs(node, path){
+      const sid = extractIdFromUrl(node.species.url);
+      const current = [
+        ...path,
+        { id: sid, name: title(node.species.name), details: node.evolution_details || [] }
+      ];
+      if(!node.evolves_to || node.evolves_to.length === 0) paths.push(current);
+      else node.evolves_to.forEach(next => dfs(next, current));
+    }
+    dfs(evo.chain, []);
+
+    // Render chain(s)
+    titleEl.textContent = `Evolution — ${title(species.name)}`;
+    contentEl.innerHTML = "";
+    paths.forEach(path => {
+      const line = document.createElement("div");
+      line.className = "evo-line";
+      path.forEach((node, idx) => {
+        const nodeDiv = document.createElement("div");
+        nodeDiv.className = "evo-node";
+        nodeDiv.innerHTML = `
+          <img src="${evoImgUrl(node.id)}" alt="${node.name}">
+          <div class="evo-name">${title(node.name)}</div>
+        `;
+        nodeDiv.onclick = () => selectPokeById(node.id);
+        line.append(nodeDiv);
+
+        // Between nodes → show method
+        if (idx < path.length - 1) {
+          const next = path[idx + 1];
+          const methodText = formatMethod(next.details);
+          const wrap = document.createElement("div");
+          wrap.style.display = "flex";
+          wrap.style.flexDirection = "column";
+          wrap.style.alignItems = "center";
+          wrap.innerHTML = `
+            <div class="evo-arrow">→</div>
+            <div class="evo-method">${methodText || ""}</div>
+          `;
+          line.append(wrap);
+        }
+      });
+      contentEl.append(line);
+    });
+
+  } catch (e) {
+    console.warn(e);
+    contentEl.innerHTML = "<em>Could not load evolution data.</em>";
   }
 }
 
 /* Select Pokémon */
 async function selectPoke(p) {
+  if (!p || typeof p !== "object") {
+    console.warn("Invalid Pokémon object:", p);
+    return;
+  }
+
+  // 🔒 Always guarantee we have types
+  if (!Array.isArray(p.types) || !p.types.length) {
+    try {
+      const r = await fetch(`https://pokeapi.co/api/v2/pokemon/${p.id}/`);
+      const j = await r.json();
+      p.types = j?.types?.map(t => title(t.type.name)) || [];
+    } catch (e) {
+      console.warn("Failed to load types for", p.id, e);
+      p.types = [];
+    }
+  }
+
   lastSelectedId = p.id;
+    evoToggle.disabled = false;
+    evoToggle.classList.remove("disabled");
   document.getElementById("evoCard").hidden = true;
   evoToggle.textContent = "Show Evolution Info";
-
   pokeList.innerHTML = "";
-  pokeInput.value = p.name;
-  document.getElementById("pokeTypes").innerHTML = "";
+  pokeInput.value = p.name || "";
+  const types = Array.isArray(p.types) ? p.types : [];
 
-  // Hide pulsing Poké Ball placeholder and show Pokémon artwork
+  // 🖼️ Artwork (regular + shiny)
   const img = document.getElementById("pokeImg");
   img.classList.remove("pulse");
   img.classList.add("active");
   img.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${p.id}.png`;
 
-  // Display Pokémon type badges
-  p.types.forEach(t => {
+  // 🟩 Safe type badges
+  const box = document.getElementById("pokeTypes");
+  box.innerHTML = "";
+  types.forEach(t => {
     const b = document.createElement("span");
     b.className = "type-badge";
     b.textContent = t;
-    b.style.background = typeColors[t];
-    document.getElementById("pokeTypes").append(b);
+    b.style.background = typeColors[t] || typeColors[title(t)] || "#888";
+    box.append(b);
   });
 
-  // Calculate and display defense info
-  const def = calcDefense(p.types);
-  renderDefenseOnly(document.getElementById("pokeResults"), p.name, def);
-
-  // Sync Type tab and show both views
-  t1.value = p.types[0];
-  t2.value = p.types[1] || "";
+  // Defense/offense
+  const def = calcDefense(types);
+  renderDefenseOnly(document.getElementById("pokeResults"), p.name || `#${p.id}`, def);
+  t1.value = types[0] || "";
+  t2.value = types[1] || "";
   updateTypePreview();
-  const label = p.types.join(" / ");
-  const off = calcOffense(p.types);
+  const label = types.length ? types.join(" / ") : "Unknown";
+  const off = calcOffense(types);
   renderBoth(document.getElementById("typeResults"), label, def, off);
+
+  if (typeof showMoves === "function") showMoves(p.name || `#${p.id}`, p.id);
 }
 
 async function selectPokeById(id){
@@ -704,23 +827,95 @@ async function selectPokeById(id){
   selectPoke({id,name,types});
 }
 
-/* Pokémon reset */
-document.getElementById("pokeResetBtn").onclick=()=>{
-  pokeInput.value="";
-  document.getElementById("pokeList").innerHTML="";
-  document.getElementById("pokeTypes").innerHTML="";
-  document.getElementById("pokeResults").innerHTML="";
-  hidePokemonImage(); // <-- restore pulsing Poké Ball placeholder
-  document.getElementById("evoCard").hidden=true;
-  evoToggle.textContent="Show Evolution Info";
+/* Pokémon reset — full clear including new UI elements */
+document.getElementById("pokeResetBtn").onclick = () => {
+  console.log("Full Pokémon reset triggered.");
+
+  // Clear search & panels
+  pokeInput.value = "";
+  document.getElementById("pokeList").innerHTML = "";
+  document.getElementById("pokeResults").innerHTML = "";
+  document.getElementById("pokeTypes").innerHTML = "";
+  document.getElementById("typeResults").innerHTML = "";
+
+  // Clear selection state so evo toggle cannot use stale id
+  lastSelectedId = null;
+
+  // Remove side-by-side art wrapper (regular + shiny)
+  const wrap = document.getElementById("pokeArtWrap");
+  if (wrap) wrap.remove();
+
+  // Restore placeholder image in correct container
+  let holder = document.getElementById("pokeControls") || document.getElementById("pokeSection") || document.body;
+  let img = document.getElementById("pokeImg");
+  if (!img) {
+    img = document.createElement("img");
+    img.id = "pokeImg";
+    img.style.width = "140px";
+    holder.insertBefore(img, holder.firstChild);
+  }
+  // your helper that sets icon + pulse class
+  if (typeof hidePokemonImage === "function") hidePokemonImage(); 
+  else { img.src = "icon-192.png"; img.classList.add("pulse"); img.classList.remove("active"); }
+
+  // Remove shiny outright
+  const shiny = document.getElementById("pokeImgShiny");
+  if (shiny) shiny.remove();
+
+  // Clear moves
+  const tbody = document.querySelector("#movesTable tbody");
+  if (tbody) tbody.innerHTML = `<tr><td colspan="5">No data yet.</td></tr>`;
+
+  // Hide evo card and clear its content (keep skeleton shell)
+  const evoCard = document.getElementById("evoCard");
+  if (evoCard) {
+    const content = document.getElementById("evoContent");
+    if (content) content.innerHTML = "";
+    const titleEl = document.getElementById("evoTitle");
+    if (titleEl) titleEl.textContent = "Evolution";
+    evoCard.hidden = true;
+  }
+  evoToggle.textContent = "Show Evolution Info";
+  evoToggle.disabled = true;
+  evoToggle.classList.add("disabled");
+
+  // Reset type selects
+  t1.value = ""; 
+  t2.value = "";
+
+  window.scrollTo(0, 0);
+  console.log("Pokémon data fully cleared.");
 };
 
-/* Type check button (again here to ensure binding) */
-document.getElementById("checkBtn").onclick=()=>{
-  const sel=[t1.value,t2.value].filter(Boolean);
-  if(!sel.length) return;
-  const label=sel.join(" / "); const def=calcDefense(sel), off=calcOffense(sel);
-  renderBoth(document.getElementById("typeResults"),label,def,off);
+/* --- Type checker button (final safe version) --- */
+document.getElementById("checkBtn").onclick = () => {
+  const t1El = document.getElementById("type1");
+  const t2El = document.getElementById("type2");
+
+  // make sure dropdowns exist
+  if (!t1El || !t2El) {
+    alert("Type dropdowns not ready yet. Try switching back to the Home tab and then re-open the Type Checker.");
+    return;
+  }
+
+  const t1Val = t1El.value || "";
+  const t2Val = t2El.value || "";
+
+  const sel = [];
+  if (t1Val) sel.push(t1Val);
+  if (t2Val) sel.push(t2Val);
+
+  if (sel.length === 0) {
+    alert("Please select at least one type before checking.");
+    return;
+  }
+
+  const label = sel.join(" / ");
+  const def = calcDefense(sel);
+  const off = calcOffense(sel);
+
+  const target = document.getElementById("typeResults");
+  if (target) renderBoth(target, label, def, off);
 };
 
 /* PWA registration only over http(s) */
@@ -948,31 +1143,76 @@ function loadTeam() {
   const comboType1 = document.getElementById("comboType1");
   const comboType2 = document.getElementById("comboType2");
   const comboResults = document.getElementById("comboResults");
-  document.getElementById("comboSearchBtn").onclick = async ()=>{
-    await loadData();
-    const a = comboType1.value;
-    const b = comboType2.value;
-    if (!a && !b) { comboResults.innerHTML = ""; return; }
-    const match = pokedata.filter(p=>{
-      if (b) {
-        // dual type (any order)
-        return p.types.length===2 && ((p.types[0]===a&&p.types[1]===b)||(p.types[0]===b&&p.types[1]===a));
-      }
-      // single type match (any slot)
-      return p.types.includes(a);
-    }).slice(0, 200);
+  document.getElementById("comboSearchBtn").onclick = async () => {
+    const a = document.getElementById("comboType1").value;
+    const b = document.getElementById("comboType2").value; // may be ""
+
+    const comboResults = document.getElementById("comboResults");
     comboResults.innerHTML = "";
-    match.forEach(p=>{
-      const card = document.createElement("div");
-      card.className = "poke-card";
-      card.innerHTML = `<img src="${artUrl(p.id)}"><div class="nm">${p.name}</div>`;
-      card.onclick = () => {
-        window.switchTab("pokeSection");
-        selectPoke(p);
+
+    if (!a && !b) return;
+
+    // helper: fetch a Set of pokemon ids that have a given type
+    async function fetchTypeSet(typeName){
+        const r = await fetch(`https://pokeapi.co/api/v2/type/${typeName.toLowerCase()}`);
+        if (!r.ok) { console.warn("Type fetch failed", typeName); return new Set(); }
+        const j = await r.json();
+        const ids = j.pokemon
+        .map(x => extractIdFromUrl(x.pokemon.url))
+        .filter(Boolean);
+        return new Set(ids);
+    }
+
+    // single-type or dual-type logic via set intersection
+    let idList = [];
+    if (a && !b) {
+        const setA = await fetchTypeSet(a);
+        idList = Array.from(setA);
+    } else if (!a && b) {
+        const setB = await fetchTypeSet(b);
+        idList = Array.from(setB);
+    } else {
+        const [setA, setB] = await Promise.all([fetchTypeSet(a), fetchTypeSet(b)]);
+        // intersect
+        idList = Array.from(setA).filter(id => setB.has(id));
+    }
+
+    // render cards (limit so mobile stays snappy)
+    const limited = idList.slice(0, 200);
+    if (!limited.length) {
+        comboResults.innerHTML = `<div class="resultCard" style="text-align:center">No matches for ${[a,b].filter(Boolean).join(" / ")}.</div>`;
+        return;
+    }
+
+    limited.forEach(id => {
+        const card = document.createElement("div");
+        card.className = "poke-card";
+        const name = cap((id && id.toString()) || "pokemon");
+
+        card.innerHTML = `
+            <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png" loading="lazy">
+            <div class="nm">#${String(id).padStart(3,'0')}</div>
+        `;
+
+        // when clicked, jump to Pokémon checker and load full details
+        card.onclick = () => {
+            window.switchTab("pokeSection");
+
+            // Always prefer selectPokeById to guarantee types, moves, and shiny data
+            if (typeof selectPokeById === "function") {
+            selectPokeById(id);
+            } else if (typeof selectPoke === "function") {
+            // fallback: minimal safe object
+            selectPoke({ id, name: `#${id}`, types: [] });
+            } else {
+            console.warn("No valid selection function found for ID:", id);
+            }
         };
-      comboResults.append(card);
-    });
-  };
+
+        comboResults.append(card);
+        });
+    };
+
   document.getElementById("comboClearBtn").onclick = ()=>{ comboType1.selectedIndex = 0; comboType2.selectedIndex = 0; comboResults.innerHTML = ""; };
 
   /* ---------- MATCHUP (VS) ---------- */
