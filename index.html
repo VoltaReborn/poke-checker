@@ -278,6 +278,14 @@ button:hover { background:var(--accent); color:#000; }
   height: 16px;
 }
 
+/* category icons (Physical / Special / Status) */
+.cat-icon{
+  width: 20px;
+  height: 20px;
+  vertical-align: middle;
+  filter: drop-shadow(0 0 3px rgba(10,18,36,.6));
+}
+
 /* side-by-side regular + shiny art */
 #pokeArtWrap{
   display:flex;
@@ -296,6 +304,33 @@ button:hover { background:var(--accent); color:#000; }
 }
 
 #evoToggle.disabled { opacity: .5; pointer-events: none; }
+
+.cat-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.cat-wrapper::after {
+  content: attr(title);
+  position: absolute;
+  bottom: 120%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(20, 20, 30, 0.9);
+  color: #fff;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 11px;
+  opacity: 0;
+  pointer-events: none;
+  white-space: nowrap;
+  transition: opacity 0.2s ease;
+}
+
+.cat-wrapper:hover::after,
+.cat-wrapper:active::after {
+  opacity: 1;
+}
 
 </style>
 </head>
@@ -1522,15 +1557,29 @@ shiny.hidden = false;
       }catch{return {...m,type:"unknown",power:"—",cat:"status"};}
     }));
 
-    tbody.innerHTML=detailed.map(m=>{
-      const color = typeColorsLower[m.type] || "#666";
-      return `<tr>
+    // map damage class to your icon filenames
+    const iconFor = (cat) => {
+    const c = (cat || "").toLowerCase();
+    if (c === "physical") return "icon-physical.png";
+    if (c === "special")  return "icon-special.png";
+    return "icon-status.png"; // status
+    };
+
+    tbody.innerHTML = detailed.map(m=>{
+    const color = typeColorsLower[m.type] || "#666";
+    const icon  = iconFor(m.cat);
+    const catLabel = m.cat ? m.cat.charAt(0).toUpperCase() + m.cat.slice(1) : "";
+    return `<tr>
         <td>${m.level}</td>
         <td style="text-transform:capitalize">${m.name}</td>
         <td><span class="move-type-badge" style="background:${color}">${m.type}</span></td>
         <td>${m.power}</td>
-        <td style="text-transform:capitalize">${m.cat}</td>
-      </tr>`;
+        <td>
+        <div class="cat-wrapper" title="${catLabel}">
+            <img src="${icon}" alt="${catLabel}" class="cat-icon">
+        </div>
+        </td>
+    </tr>`;
     }).join("");
   }
 
