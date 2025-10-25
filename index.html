@@ -347,6 +347,100 @@ button:hover { background:var(--accent); color:#000; }
   100% { opacity: 0; }
 }
 
+/* Team layout: full-width card, proper layering, no red bleed */
+.team-bar { display: flex; flex-direction: column; gap: 10px; }
+
+.team-slot {
+  position: relative;
+  width: 100%;
+  border: 1px solid var(--accent);
+  border-radius: 12px;
+  background: var(--card);       /* card has the theme background */
+  box-sizing: border-box;
+  max-width: 100%;
+  overflow: hidden;              /* hide rail when closed */
+  padding: 0;                    /* no padding on the container */
+}
+
+/* SLIDING CONTENT sits above the rail and covers rounded corners */
+.slot-content {
+  position: relative;
+  z-index: 1;                    /* above the rail */
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: center;
+  width: 100%;                   /* fill the card */
+  padding: 10px 12px;            /* move padding here */
+  border-radius: inherit;        /* match the card’s rounded corners */
+  background: var(--card);       /* same background as card to hide rail */
+  transform: translateX(0);      /* explicitly closed */
+  transition: transform .2s ease;
+  will-change: transform;
+  box-shadow: 1px 0 0 var(--card);
+}
+.team-slot.dragging .slot-content { transition: none; }
+
+/* FIXED DELETE RAIL behind content (red) */
+.slot-delete {
+  position: absolute;
+  top: 0; right: 0;
+  height: 100%;
+  width: 96px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--danger, #dc2626);   /* red */
+  color: #fff; font-weight: 800;
+  border: none;
+  border-left: 1px solid rgba(0,0,0,.25);
+  z-index: 0;                           /* behind content */
+}
+
+/* left side */
+.slot-left { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.slot-art  { width: 64px; height: 64px; object-fit: contain; }
+.slot-name-line { max-width: 140px; }
+.slot-name { text-align: center; font-weight: 700; white-space: normal; }
+
+/* Right side: always fill the row */
+.slot-right {
+  display: grid;
+  grid-template-columns: 1fr auto;   /* chips take full width, actions hug right */
+  align-items: center;
+  gap: 8px;
+  width: 100%;                       /* ← stretch across the card */
+  justify-items: stretch;            /* chips block stretches, actions keep their width */
+}
+
+/* Moves area: true 2×2 and full width (no max-content shrink) */
+.moves-preview {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)); /* equal 2 columns that actually stretch */
+  gap: 8px;
+  width: 100%;
+  /* remove the old max-width constraint so it can fill the slot */
+}
+
+.moves-preview[data-empty="1"] { opacity: .7; }
+
+/* Chips: perfectly centered text (both axes) and consistent height */
+.move-chip {
+  display: flex;                     /* center text reliably */
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;                  /* visual consistency row-to-row */
+  padding: 6px 12px;                 /* keep the pill shape */
+  border-radius: 999px;
+  font-size: .95rem;
+  font-weight: 700;
+  white-space: nowrap;
+  text-align: center;                /* belt-and-suspenders centering */
+}
+
+@media (max-width: 420px) {
+  .slot-right { justify-items: stretch; }
+  .moves-preview { justify-content: center; }
+}
+
 </style>
 </head>
 <body>
@@ -1348,68 +1442,251 @@ function loadTeam() {
     mk("B", vsB, vsA, bBest);
   }
 
-  /* ---------- TEAM COVERAGE ---------- */
-  const teamInput = document.getElementById("teamInput");
+  /* ---------- TEAM COVERAGE (types for defense, moves for offense) ---------- */
+(function(){
+  const teamInput   = document.getElementById("teamInput");
   const teamSuggest = document.getElementById("teamSuggest");
-  const teamSlots = document.getElementById("teamSlots");
+  const teamSlots   = document.getElementById("teamSlots");
   const teamDefense = document.getElementById("teamDefense");
   const teamOffense = document.getElementById("teamOffense");
 
+  // Keep your existing storage key & structure, but allow a 'moves' array per mon
+  const TEAM_KEY = "poketype-team-v1";
+  let team = [];
+
+  function saveTeam(){ localStorage.setItem(TEAM_KEY, JSON.stringify(team)); }
+  function loadTeam(){
+    try {
+      const raw = localStorage.getItem(TEAM_KEY);
+      const parsed = JSON.parse(raw);
+      team = Array.isArray(parsed) ? parsed.map(p => ({...p, moves: p.moves || []})) : [];
+    } catch { team = []; }
+  }
+
+  // -------- Suggest list (base forms only) --------
   async function teamSuggestHandler(){
     await loadData();
-    const q = teamInput.value.toLowerCase();
+    const q = (teamInput.value || "").toLowerCase();
     teamSuggest.innerHTML = "";
     if (!q) return;
-    pokedata.filter(p=>p.name.toLowerCase().includes(q)).slice(0,12).forEach(p=>{
+
+    const filtered = pokedata.filter(p =>
+      p.name.toLowerCase().includes(q) &&
+      !p.name.includes("-") &&
+      p.id <= 1025 &&
+      !p.name.match(/mega|gmax|totem|starter|battle|cosplay|cap|partner|rock-star|belle|pop-star|phd|libre|original|world|hisui|paldea|alola|galar/i)
+    );
+
+    filtered.slice(0,12).forEach(p=>{
       const d = document.createElement("div");
       d.textContent = p.name;
       d.style.cursor = "pointer";
-      d.onclick = ()=>{ addToTeam(p); teamSuggest.innerHTML=""; teamInput.value=""; };
+      d.onclick = async ()=>{
+        await addToTeam(p);
+        teamSuggest.innerHTML = "";
+        teamInput.value = "";
+      };
       teamSuggest.append(d);
     });
   }
-  teamInput.addEventListener("input", teamSuggestHandler);
+  if (teamInput) teamInput.addEventListener("input", teamSuggestHandler);
 
-  function addToTeam(p){
+  // Guarantee we have types for coverage
+  async function ensureTypes(id){
+    try{
+      const r = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}/`);
+      const j = await r.json();
+      return (j.types || []).map(t=>title(t.type.name));
+    }catch{ return []; }
+  }
+
+  async function addToTeam(p){
     if (team.length >= 6) return;
-    // avoid dup by id
-    if (team.some(x=>x.id===p.id)) return;
-    team.push({id:p.id, name:p.name, types:p.types});
-    renderTeam();
+    if (team.some(x => x.id === p.id)) return;
+    const types = Array.isArray(p.types) && p.types.length ? p.types : await ensureTypes(p.id);
+    team.push({ id: p.id, name: p.name, types, moves: [] });
+    saveTeam();
+    await renderTeam();
   }
   function removeFromTeam(id){
-    team = team.filter(x=>x.id!==id);
+    team = team.filter(x => x.id !== id);
+    saveTeam();
     renderTeam();
   }
 
-  function renderTeam(){
-    if (!Array.isArray(team)) team = [];
-    // slots
-    teamSlots.innerHTML = "";
-    team.forEach(p=>{
-      const slot = document.createElement("div");
-      slot.className = "team-slot";
-      slot.innerHTML = `<img src="${artUrl(p.id)}"><div>${p.name}</div>`;
-      const rm = document.createElement("button");
-      rm.className = "rm"; rm.textContent = "Remove";
-      rm.onclick = ()=>removeFromTeam(p.id);
-      slot.append(rm);
-      teamSlots.append(slot);
-    });
+  // -------- Moveset editor (modal) --------
+  let allMoves = [];                 // [{name, url}]
+  let activeIndex = null;            // index in team[]
+  let tempMoves = [];                // working copy for Cancel/Save
+  const moveTypeCache = JSON.parse(localStorage.getItem("moveTypeCacheV1") || "{}");
 
-    // defense: for each attack type, count how many mons are weak/resist/immune
+  async function loadAllMoves(){
+    if (allMoves.length) return;
+
+    const res = await fetch("https://pokeapi.co/api/v2/move?limit=10000");
+    if (!res.ok) return;
+    const data = await res.json();
+
+    // Exclude Z-Moves and Max/G-Max moves by API slug
+    const banRE = new RegExp(
+      [
+        // Max / G-Max
+        '^max-', '^g-max-',
+        // 18 type-based Z-moves
+        '^breakneck-blitz$', '^all-out-pummeling$', '^supersonic-skystrike$',
+        '^acid-downpour$', '^continental-crush$', '^savage-spin-out$',
+        '^never-ending-nightmare$', '^corkscrew-crash$', '^inferno-overdrive$',
+        '^hydro-vortex$', '^bloom-doom$', '^gigavolt-havoc$',
+        '^shattered-psyche$', '^subzero-slammer$', '^devastating-drake$',
+        '^black-hole-eclipse$', '^twinkle-tackle$', '^tectonic-rage$',
+        // Signature Z-moves (non-type generics)
+        '^10-000-000-volt-thunderbolt$', '^catastropika$', '^stoked-sparksurfer$',
+        '^pulverizing-pancake$', '^extreme-evoboost$', '^sinister-arrow-raid$',
+        '^malicious-moonsault$', '^oceanic-operetta$', '^guardian-of-alola$',
+        '^soul-stealing-7-star-strike$', '^light-that-burns-the-sky$',
+        '^menacing-moonraze-maelstrom$', '^searing-sunraze-smash$',
+        "^let-s-snuggle-forever$"
+      ].join('|'),
+      'i'
+    );
+
+    allMoves = data.results
+      .map(m => ({ name: title(m.name), url: m.url, slug: m.name }))
+      .filter(m => !banRE.test(m.slug));
+  }
+
+
+  async function getMoveType(moveName){
+    const key = moveName.toLowerCase();
+    if (moveTypeCache[key]) return moveTypeCache[key];
+    const rec = allMoves.find(m => m.name.toLowerCase() === key);
+    if (!rec) return null;
+    const r = await fetch(rec.url);
+    if (!r.ok) return null;
+    const j = await r.json();
+    const t = title(j.type.name);
+    moveTypeCache[key] = t;
+    localStorage.setItem("moveTypeCacheV1", JSON.stringify(moveTypeCache));
+    return t;
+  }
+
+  async function renderSelectedMoves(){
+    const box = document.getElementById("selectedMoves");
+    if (!box) return;
+    box.innerHTML = "";
+    for (const [i, mv] of tempMoves.entries()){
+      const t = await getMoveType(mv);
+      const chip = document.createElement("span");
+      chip.textContent = mv;
+      chip.className = "move-chip";
+      chip.style.background = t && typeColors[t] ? typeColors[t] : "var(--accent)";
+      chip.style.color = "#000";
+      chip.title = "Click to remove";
+      chip.onclick = () => {
+        tempMoves.splice(i, 1);
+        renderSelectedMoves();
+      };
+      box.append(chip);
+    }
+  }
+
+  async function searchMoves(q){
+    await loadAllMoves();
+    const results = document.getElementById("moveSearchResults");
+    if (!results) return;
+    results.innerHTML = "";
+    const s = (q || "").trim().toLowerCase();
+    if (!s) return;
+    const list = allMoves.filter(m => m.name.toLowerCase().includes(s)).slice(0, 20);
+    for (const m of list){
+      const row = document.createElement("div");
+      row.textContent = m.name;
+      row.style.cssText = "padding:6px 8px; cursor:pointer;";
+      row.onmouseenter = () => row.style.background = "rgba(255,255,255,.08)";
+      row.onmouseleave = () => row.style.background = "transparent";
+      row.onclick = async () => {
+        if (tempMoves.length >= 4) return;
+        if (tempMoves.includes(m.name)) return;
+        tempMoves.push(m.name);
+
+        // clear input/results immediately after selecting a move
+        const input = document.getElementById("moveSearchInput");
+        if (input){ input.value = ""; }
+        results.innerHTML = "";
+
+        await renderSelectedMoves();
+      };
+      results.append(row);
+    }
+  }
+
+  function openMovesetModal(index){
+    activeIndex = index;
+    tempMoves = [...(team[activeIndex].moves || [])]; // working copy for cancel
+    const modal = document.getElementById("movesetModal");
+    if (!modal) return;
+    modal.style.display = "flex";
+
+    // (Re)bind listeners now that modal is present
+    const input = document.getElementById("moveSearchInput");
+    const save  = document.getElementById("saveMovesetBtn");
+    const close = document.getElementById("closeMovesetModal");
+
+    if (input) {
+      const clone = input.cloneNode(true);
+      input.parentNode.replaceChild(clone, input);
+      clone.addEventListener("input", e => searchMoves(e.target.value));
+      clone.value = "";
+    }
+    if (close) {
+      const clone = close.cloneNode(true);
+      close.parentNode.replaceChild(clone, close);
+      clone.onclick = () => {
+        // discard changes
+        tempMoves = [];
+        closeMovesetModal();
+      };
+    }
+    if (save) {
+      const clone = save.cloneNode(true);
+      save.parentNode.replaceChild(clone, save);
+      clone.onclick = async () => {
+        // commit changes
+        team[activeIndex].moves = [...tempMoves];
+        saveTeam();
+        tempMoves = [];
+        closeMovesetModal();
+        await renderTeam(); // refresh preview + coverage
+      };
+    }
+
+    // reset results and draw chips for working copy
+    const results = document.getElementById("moveSearchResults");
+    if (results) results.innerHTML = "";
+    renderSelectedMoves();
+  }
+
+  function closeMovesetModal(){
+    const modal = document.getElementById("movesetModal");
+    if (modal) modal.style.display = "none";
+    activeIndex = null;
+  }
+
+
+  // -------- Coverage (Defense: by types, Offense: by move types) --------
+  async function updateCoverage(){
+    // === Defensive coverage (unchanged) ===
     const atkTypes = Object.keys(typeChart);
     const counts = atkTypes.map(atk=>{
       let weak=0,res=0,imm=0;
       team.forEach(mon=>{
-        const m = multAtkVsDefType(atk, mon.types);
+        const m = multAtkVsDefType(atk, mon.types || []);
         if (m>1) weak++;
         else if (m===0) imm++;
         else if (m<1) res++;
       });
       return {atk, weak, res, imm};
-    });
-    counts.sort((a,b)=>b.weak - a.weak); // top threats first
+    }).sort((a,b)=>b.weak - a.weak);
 
     teamDefense.innerHTML = `<div class="coverage-title">Team Defense: Top Threats</div>`;
     const defRow = document.createElement("div");
@@ -1423,46 +1700,190 @@ function loadTeam() {
     });
     teamDefense.append(defRow);
 
-    // offense: which defender types are covered by at least one team type
+    // === Offensive coverage (by selected moves only) ===
+    const usedAtkTypes = new Set();
+    for (const mon of team){
+      if (!mon.moves || !mon.moves.length) continue;
+      for (const mv of mon.moves){
+        const t = await getMoveType(mv);
+        if (t) usedAtkTypes.add(t); // e.g. "Fire"
+      }
+    }
+
     const defTypes = Object.keys(typeChart);
     const covered = new Set();
-    team.forEach(mon=>{
-      defTypes.forEach(def=>{
-        const m = bestAttack(mon.types, [def]).mult; // mono-def for coverage
-        if (m>1) covered.add(def);
-      });
+    defTypes.forEach(def => {
+      for (const atk of usedAtkTypes){
+        // reuse your existing calcOffense() on a single attacking type
+        const strong = calcOffense([atk]).strong;
+        if (strong.some(x => x.type === def)) { covered.add(def); break; }
+      }
     });
-    const uncovered = defTypes.filter(d=>!covered.has(d));
+    const uncovered = defTypes.filter(d => !covered.has(d));
 
-    teamOffense.innerHTML = `<div class="coverage-title">Team Offense: Coverage Map</div>`;
-    const offRow1 = document.createElement("div");
-    offRow1.className = "coverage-row";
+    teamOffense.innerHTML = `<div class="coverage-title">Team Offense (by Moves)</div>`;
+    const row1 = document.createElement("div");
+    row1.className = "coverage-row";
     covered.forEach(d=>{
-      const b = document.createElement("span");
-      b.className = "coverage-badge";
-      b.style.background = typeColors[d];
-      b.textContent = d;
-      offRow1.append(b);
+      const b=document.createElement("span");
+      b.className="coverage-badge";
+      b.style.background=typeColors[d];
+      b.textContent=d;
+      row1.append(b);
     });
-    const offRow2 = document.createElement("div");
-    offRow2.className = "coverage-row";
+    const row2 = document.createElement("div");
+    row2.className="coverage-row";
     uncovered.forEach(d=>{
-      const b = document.createElement("span");
-      b.className = "coverage-badge";
-      b.style.background = "#444";
-      b.textContent = d;
-      offRow2.append(b);
+      const b=document.createElement("span");
+      b.className="coverage-badge";
+      b.style.background="#444";
+      b.textContent=d;
+      row2.append(b);
     });
-    teamOffense.append(offRow1, offRow2);
+    teamOffense.append(row1,row2);
+  }
+
+  // --- slide-to-delete helper (per slot) ---
+  function setupSwipeToDelete(slotEl, contentEl, deleteBtn, onRemove) {
+    const RAIL = 96;                 // width of delete rail
+    const OPEN_SNAP = 70;            // release past this → snap open to -RAIL
+    const DELETE_TRIP = 140;         // swipe past this → delete immediately
+    let startX = null, currentX = 0, dragging = false;
+
+    const setX = (x) => { contentEl.style.transform = `translateX(${x}px)`; };
+
+    const endDrag = () => {
+      slotEl.classList.remove('dragging');
+      dragging = false;
+
+      // decide final state
+      if (currentX <= -DELETE_TRIP) {
+        // hard swipe → delete immediately (no confirm per request)
+        setX(-DELETE_TRIP);
+        onRemove();
+        return;
+      }
+      if (currentX <= -OPEN_SNAP) {
+        setX(-RAIL); // snap open to show Delete
+      } else {
+        setX(0);     // snap closed
+      }
+    };
+
+    // Pointer (mouse) support
+    contentEl.addEventListener('mousedown', e => {
+      startX = e.clientX; dragging = true; slotEl.classList.add('dragging');
+    });
+    window.addEventListener('mousemove', e => {
+      if (!dragging) return;
+      const dx = e.clientX - startX;
+      currentX = Math.min(0, Math.max(-200, dx)); // clamp [ -200, 0 ]
+      setX(currentX);
+    });
+    window.addEventListener('mouseup', () => {
+      if (!dragging) return;
+      endDrag();
+    });
+
+    // Touch support
+    contentEl.addEventListener('touchstart', e => {
+      startX = e.touches[0].clientX; dragging = true; slotEl.classList.add('dragging');
+    }, { passive: true });
+    contentEl.addEventListener('touchmove', e => {
+      if (!dragging) return;
+      const dx = e.touches[0].clientX - startX;
+      currentX = Math.min(0, Math.max(-200, dx));
+      setX(currentX);
+    }, { passive: true });
+    contentEl.addEventListener('touchend', () => {
+      if (!dragging) return;
+      endDrag();
+    }, { passive: true });
+
+    // Tap on delete rail
+    if (deleteBtn) deleteBtn.onclick = () => onRemove();
+  }
+
+  // -------- Team UI (with slide-to-delete) --------
+  async function renderTeam(){
+    teamSlots.innerHTML = "";
+    for (const [idx,p] of team.entries()){
+      const slot = document.createElement("div");
+      slot.className = "team-slot";
+
+      // fixed delete rail (sits on the right, outside normal flow)
+      const del = document.createElement("button");
+      del.className = "slot-delete";
+      del.textContent = "Remove";
+      del.setAttribute("aria-label", `Remove ${p.name}`);
+
+      // sliding content
+      const content = document.createElement("div");
+      content.className = "slot-content";
+      content.style.transform = "translateX(0)"; // ensure the rail is hidden initially
+      content.innerHTML = `
+        <div class="slot-left">
+          <img class="slot-art" src="${artUrl(p.id)}" loading="lazy" alt="${p.name}">
+          <div class="slot-name-line"><div class="slot-name">${p.name}</div></div>
+        </div>
+        <div class="slot-right">
+          <div class="moves-preview" ${Array.isArray(p.moves) && p.moves.length ? "" : 'data-empty="1"'}></div>
+          <div class="slot-actions">
+            ${Array.isArray(p.moves) && p.moves.length ? "" : '<button class="editMoves">➕ Add moves</button>'}
+          </div>
+        </div>
+      `;
+
+      // assemble
+      slot.append(content, del);
+
+      // swipe/drag behavior
+      setupSwipeToDelete(slot, content, del, () => removeFromTeam(p.id));
+
+      // moveset openers
+      const editBtn = content.querySelector(".editMoves");
+      if (editBtn) editBtn.onclick = () => openMovesetModal(idx);
+
+      const preview = content.querySelector(".moves-preview");
+      preview.onclick = () => openMovesetModal(idx);
+      preview.innerHTML = "";
+
+      // render move chips with type color
+      if (Array.isArray(p.moves) && p.moves.length){
+        for (const mv of p.moves){
+          const t = await getMoveType(mv);
+          const chip = document.createElement("span");
+          chip.textContent = mv;
+          chip.className = "move-chip";
+          chip.style.background = t && typeColors[t] ? typeColors[t] : "var(--accent)";
+          chip.style.color = "#000";
+          preview.append(chip);
+        }
+      } else {
+        const hint = document.createElement("span");
+        hint.className = "moves-hint";
+        hint.textContent = "Tap to add moves";
+        preview.append(hint);
+      }
+
+      teamSlots.append(slot);
+    }
+    await updateCoverage();
   }
 
   // Buttons
-  document.getElementById("saveTeamBtn").onclick = ()=>{ saveTeam(); };
-  document.getElementById("clearTeamBtn").onclick = ()=>{ team = []; renderTeam(); saveTeam(); };
+  const saveBtn  = document.getElementById("saveTeamBtn");
+  const clearBtn = document.getElementById("clearTeamBtn");
+  if (saveBtn)  saveBtn.onclick  = ()=> saveTeam();
+  if (clearBtn) clearBtn.onclick = ()=>{ team=[]; saveTeam(); renderTeam(); };
 
-  // Initialize team from localStorage
-  loadTeam(); renderTeam();
+  // Init
+  loadTeam();
+  renderTeam();
 })();
+  // make switchTab callable from other handlers that use window.switchTab(...)
+  window.switchTab = switchTab;
+})(); // <-- closes (function injectFeatureTabs(){ ... })
 
 /* === HOME-ONLY NAVIGATION (fixed timing) === */
 (function setupHomeNavigation(){
@@ -1659,5 +2080,26 @@ document.addEventListener("click", (e) => {
 });
 
 </script>
+
+<!-- === TEAM MOVESET MODAL === -->
+<div id="movesetModal" style="
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,.7);
+  align-items:center; justify-content:center; z-index:10000;">
+  <div style="background:var(--card); border:1px solid var(--accent); border-radius:12px;
+              width:92%; max-width:460px; padding:14px; color:var(--text);">
+    <h3 style="margin:0 0 8px;">Edit Moveset</h3>
+    <input id="moveSearchInput" placeholder="Search moves..." autocomplete="off"
+           style="width:100%; padding:8px; border-radius:8px; border:1px solid var(--accent);
+                  background:var(--bg); color:var(--text);">
+    <div id="moveSearchResults" style="margin-top:8px; max-height:160px; overflow:auto; border:1px solid rgba(255,255,255,.1); border-radius:8px;"></div>
+    <div style="margin-top:10px; font-weight:700;">Selected (max 4)</div>
+    <div id="selectedMoves" style="display:flex; flex-wrap:wrap; gap:6px; margin-top:6px;"></div>
+    <div style="display:flex; gap:8px; justify-content:space-between; margin-top:12px;">
+      <button id="closeMovesetModal" style="flex:1;">Cancel</button>
+      <button id="saveMovesetBtn"  style="flex:1;">Save</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
