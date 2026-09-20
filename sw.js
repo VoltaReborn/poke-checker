@@ -1,5 +1,5 @@
 /* PokéType v2: app shell offline; previously fetched API data may be available offline. */
-const SHELL = 'poketype-shell-v2-1';
+const SHELL = 'poketype-shell-v2-original-look-2';
 const API = 'poketype-api-v2-1';
 const ART = 'poketype-art-v2-1';
 const PREFIX = 'poketype-';

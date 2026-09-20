@@ -7,7 +7,7 @@
 <meta name="description" content="Pokémon type matchups, Pokédex, move lists and team coverage.">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png" type="image/png">
-<title>PokéType • Pokémon type & team tools</title>
+<title>PokéType Checker</title>
 <style>
 :root{color-scheme:dark;--bg:#091325;--bg2:#0d1b32;--surface:#112543;--surface2:#162e50;--surface3:#1d3a5e;--border:#314665;--text:#f2f6ff;--muted:#afbfdb;--accent:#ffc247;--accent2:#f48d24;--good:#4bdbaf;--bad:#ff777d;--shadow:0 20px 60px #0005;--radius:18px}
 :root[data-theme="light"]{color-scheme:light;--bg:#eff4fb;--bg2:#e5eef9;--surface:#fff;--surface2:#f3f6fd;--surface3:#e5ecf9;--border:#c9d5e7;--text:#142641;--muted:#51627c;--accent:#a85b00;--accent2:#c96b06;--good:#11754d;--bad:#b92639;--shadow:0 15px 42px #1230521a}
@@ -15,33 +15,167 @@
 @media(max-width:990px){.header-inner{gap:8px}.top-nav{order:3;flex:0 0 100%}.header-tools{margin-left:auto}.layout{grid-template-columns:minmax(0,1fr)}.grid-cards{grid-template-columns:repeat(3,minmax(0,1fr))}.slot-front{grid-template-columns:64px minmax(80px,1fr) minmax(0,2fr) auto;gap:8px}.slot-front img{width:60px;height:60px}}
 @media(max-width:640px){.hero{display:block;padding:23px 18px}.hero .eyebrow{display:block;max-width:calc(100% - 80px)}.hero h1{font-size:clamp(2rem,8.2vw,2.5rem);max-width:100%}.hero-ball{position:absolute;right:13px;top:15px;width:72px}.feature-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.feature{min-height:170px;padding:14px}.feature:nth-child(5){grid-column:1/-1;min-height:125px}.view-head{align-items:center}.view-head h1{font-size:1.55rem}.view-head p{font-size:.86rem}.panel{padding:14px}.mult-grid,.versus,.info-split{grid-template-columns:minmax(0,1fr)}.grid-cards{grid-template-columns:repeat(2,minmax(0,1fr))}.slot-front{grid-template-columns:58px minmax(0,1fr) auto;gap:8px}.slot-front img{width:56px;height:56px}.slot-moves{grid-column:1/-1;grid-row:2}.slot-actions{grid-column:3;grid-row:1}.slot-name{font-size:.9rem}.team-stats{grid-template-columns:repeat(3,minmax(0,1fr))}.art-frame{min-height:132px}.art-frame img{height:115px}.coverage-item{grid-template-columns:82px 1fr}.selected-moves{grid-template-columns:1fr 1fr}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+
+/* ORIGINAL-LOOK RESTORATION: deliberately keeps v2's tested data/logic layer. */
+:root{
+  --bg:#0a1224;--bg2:#0a1224;--surface:#15254b;--surface2:#15254b;
+  --surface3:#22365e;--border:#ffb400;--text:#fff;--muted:#d1d9e8;
+  --accent:#ffb400;--accent2:#ffb400;--shadow:none;--radius:8px;
+}
+:root[data-theme="light"]{
+  color-scheme:light;--bg:#fff;--bg2:#fff;--surface:#f4f4f4;
+  --surface2:#f4f4f4;--surface3:#e9e9e9;--text:#000;--muted:#454545;
+  --border:#ffb400;--accent:#ffb400;--shadow:none;
+}
+html{scroll-behavior:auto}
+body{font:16px/1.45 system-ui,Arial,sans-serif;background:var(--bg);color:var(--text)}
+.app-header{position:static;backdrop-filter:none;background:var(--surface);border:0}
+.header-inner{max-width:none;padding:10px 16px;min-height:44px;gap:10px}
+.brand{font-size:1.1rem;letter-spacing:normal;font-weight:700;line-height:1.25}
+.header-tools{margin-left:auto}
+.icon-btn#themeBtn{background:none;border:0;color:var(--accent);font-size:1.2rem;padding:0;min-width:32px;height:28px;border-radius:4px}
+.top-nav,.footer{display:none}
+.app-main{max-width:none;margin:0;padding:10px 10px 28px}
+.view{animation:none}
+.home-shell{background:var(--surface);margin:8px 0;padding:10px;border:1px solid var(--accent);border-radius:8px}
+.feature-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0}
+.feature{min-height:0;display:block;position:static;padding:12px;text-align:center;background:var(--surface);color:var(--text);border:1px solid var(--accent);border-radius:12px;box-shadow:none;transform:none;letter-spacing:normal;line-height:1.4}
+.feature strong{display:block;font-size:1rem;font-weight:700;letter-spacing:normal;margin-bottom:6px}
+.feature small{display:block;font-size:.9rem;line-height:1.45;color:var(--text);opacity:.9}
+.feature:hover:not(:disabled){transform:translateY(-2px);background:var(--surface);color:var(--text);box-shadow:0 4px 14px #0004;border-color:#ffd36a}
+.feature:active:not(:disabled){transform:none}
+.refresh-btn{position:fixed;right:10px;bottom:10px;z-index:40;padding:6px 10px;font-size:.9rem;background:var(--surface);color:var(--accent);border:1px solid var(--accent);border-radius:8px}
+.refresh-btn:hover{background:var(--accent);color:#000}
+.view-head{display:flex;justify-content:center;align-items:center;gap:0;margin:0 0 8px}
+.view-head>div{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+.back-btn{align-self:center;margin:4px 0 8px;padding:8px 12px;border-radius:8px;border:1px solid var(--accent);background:var(--surface);color:var(--text);font-weight:600;white-space:nowrap}
+.back-btn:hover:not(:disabled),.btn:hover:not(:disabled){background:var(--accent);color:#000;border-color:var(--accent)}
+.layout{display:block}
+.panel{padding:10px;margin:8px 0;border:1px solid var(--accent);border-radius:8px;background:var(--surface);box-shadow:none}
+.panel+.panel{margin-top:8px}
+.panel h2{font-size:1.02rem;letter-spacing:normal;margin:0 0 8px}
+.panel h3{letter-spacing:normal}
+.results-stack{display:grid;gap:8px}
+.controls{gap:10px}
+.control{gap:5px}
+.control>label,.control>span{font-weight:600;font-size:1rem;color:var(--text)}
+.field{border:1px solid var(--accent);border-radius:8px;min-height:44px;padding:10px 12px;background:var(--surface);color:var(--text);text-align:center;font-size:1rem}
+.field:focus{outline:none;box-shadow:0 0 4px var(--accent);border-color:var(--accent)}
+.field::placeholder{color:var(--muted)}
+.btn{font-size:1rem;min-height:0;padding:10px 14px;border:1px solid var(--accent);border-radius:8px;background:var(--surface);color:var(--text);font-weight:400}
+.btn.primary{background:var(--surface);border-color:var(--accent);color:var(--text)}
+:root[data-theme="light"] .btn.primary{color:var(--text)}
+.btn.small{font-size:.88rem;min-height:0;padding:7px 10px}
+.btn.ghost{color:var(--accent);border-color:var(--accent)}
+.btn.danger{color:var(--bad)}
+.actions{justify-content:center;gap:10px}
+.hint{color:var(--muted)}
+.section-heading{margin:0 0 8px}
+.section-heading h2{font-size:1rem;color:var(--text)}
+.tag{background:var(--surface3);color:var(--text);border-radius:8px}
+.status{border:1px solid var(--accent);background:var(--surface);border-radius:8px;padding:10px;color:var(--muted)}
+.status.error{color:var(--bad)}
+.mult-grid{grid-template-columns:minmax(0,1fr);gap:8px}
+.mult-card{background:var(--surface);padding:10px;border:1px solid var(--accent);border-radius:8px}
+.mult-card h3{font-size:.95rem;letter-spacing:normal;color:var(--text)}
+.chips{gap:4px}
+.chip{padding:4px 8px;border-radius:12px;font-size:.9rem;min-height:0}
+.search-box{width:100%}
+.suggestions{background:var(--surface);border:1px solid var(--accent);border-radius:8px}
+.suggestion{border-radius:8px}
+.suggestion:hover,.suggestion:focus-visible{background:var(--accent);color:#000}
+.suggestion:hover small,.suggestion:focus-visible small{color:#000}
+#view-type>.layout>.panel:first-child{border:0;background:transparent;padding:0;margin:0 auto 10px;max-width:420px;box-shadow:none}
+#view-type>.layout>.panel:first-child .controls{justify-items:center;gap:10px}
+#view-type>.layout>.panel:first-child .control{width:90%;max-width:360px;text-align:center}
+#view-type .type-display{justify-content:center}
+#view-type .type-actions{width:100%;margin-top:2px}
+#view-type>.layout>.panel:first-child>.controls>.hint{display:none}
+#view-pokemon>.layout>.panel:first-child{border:0;background:transparent;padding:0;margin:0 0 10px;box-shadow:none;justify-items:center}
+#view-pokemon>.layout>.panel:first-child>.control{width:90%;max-width:360px;text-align:center}
+#view-pokemon .pokemon-placeholder{text-align:center;width:100%}
+.original-placeholder{display:block;width:100px;height:100px;object-fit:contain;margin:10px auto;opacity:.55;animation:originalPokePulse 2.4s ease-in-out infinite}
+@keyframes originalPokePulse{0%,100%{filter:drop-shadow(0 0 6px #ffb40059)}50%{filter:drop-shadow(0 0 18px #ffb400bf)}}
+#view-pokemon #pokemonInfo{width:100%;text-align:center}
+#view-pokemon .pokemon-hero{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap}
+#view-pokemon .art-frame{border:0;min-height:0;background:transparent;border-radius:0;gap:0;padding:0}
+#view-pokemon .art-frame img{width:140px;height:140px;object-fit:contain;filter:none}
+#view-pokemon .art-frame span,#view-pokemon .pokemon-name,#view-pokemon #pokemonInfo>p.hint{display:none}
+#view-pokemon #pokemonInfo>.type-display{justify-content:center;margin:6px 0}
+#view-pokemon #pokemonFormWrap{width:90%;max-width:360px}
+#view-pokemon #pokemonClear{margin:0 auto}
+#view-pokemon .results-stack>.panel{margin:8px 0}
+.evo-path{background:var(--surface);border:1px solid var(--accent);border-radius:8px}
+.evo-node{border-radius:8px}
+.evo-node:hover{background:var(--surface3)}
+.move-table-wrap{border-color:var(--accent);border-radius:8px}
+.move-table th{background:var(--surface);color:var(--accent)}
+.move-table td,.move-table th{padding:7px 8px}
+.poke-tile{background:var(--surface);border:1px solid var(--accent);border-radius:10px}
+.poke-tile:hover{background:var(--surface3)}
+.versus{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.team-list{gap:10px}
+.team-slot{background:var(--surface);border:1px solid var(--accent);border-radius:12px}
+.slot-front{background:var(--surface)}
+.coverage-item{background:var(--surface);border-color:var(--accent);border-radius:8px}
+.stat{background:var(--surface);border-color:var(--accent);border-radius:8px}
+details{background:var(--surface);border-color:var(--accent);border-radius:8px}
+dialog{background:var(--surface);color:var(--text);border:1px solid var(--accent);border-radius:12px}
+.dialog-options{border-color:var(--accent);background:var(--surface)}
+.move-option:hover{background:var(--surface3)}
+.selected-moves button{background:var(--surface);color:var(--text);border-color:var(--accent)}
+.toast{background:var(--surface);border-color:var(--accent);border-radius:8px}
+@media(min-width:860px){.feature-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.grid-cards{grid-template-columns:repeat(6,minmax(0,1fr))}}
+@media(max-width:990px){.layout{display:block}}
+@media(max-width:640px){
+ .app-main{padding:10px 10px 28px}
+ .feature-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .feature{min-height:0;padding:12px}
+ .feature:nth-child(5){grid-column:auto;min-height:0}
+ .panel{padding:10px}
+ .versus,.info-split{grid-template-columns:minmax(0,1fr)}
+ .grid-cards{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .slot-front{grid-template-columns:58px minmax(0,1fr) auto}
+ .slot-moves{grid-column:1/-1;grid-row:2}
+}
+@media(max-width:370px){.grid-cards{grid-template-columns:repeat(2,minmax(0,1fr))}.feature small{font-size:.81rem}}
+/* Keep native and app scroll areas consistent with the original navy / amber palette. */
+*{scrollbar-color:#6b7895 var(--bg);scrollbar-width:thin}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:#6b7895;border:2px solid var(--bg);border-radius:10px}
+::-webkit-scrollbar-thumb:hover{background:var(--accent)}
+@media(prefers-reduced-motion:reduce){.original-placeholder{animation:none}}
+
 </style>
 </head>
 <body>
 <header class="app-header"><div class="header-inner">
- <button class="brand" type="button" data-view="home" aria-label="PokéType home"><img src="icon-192.png" alt="">PokéType<span class="dot">.</span></button>
- <nav class="top-nav" aria-label="Main navigation">
-  <button class="nav-btn" data-view="home" aria-current="page">Home</button><button class="nav-btn" data-view="type">Type checker</button><button class="nav-btn" data-view="pokemon">Pokémon</button><button class="nav-btn" data-view="combo">Type search</button><button class="nav-btn" data-view="vs">Matchup</button><button class="nav-btn" data-view="team">Team</button>
- </nav><div class="header-tools"><button class="icon-btn" id="themeBtn" aria-label="Switch to light theme" title="Toggle light / dark theme">☀</button></div>
+ <button class="brand" type="button" data-view="home" aria-label="PokéType Checker home">PokéType Checker</button>
+ <div class="header-tools"><button class="icon-btn" id="themeBtn" aria-label="Switch to light theme" title="Toggle light / dark theme">☀️</button></div>
 </div><div id="offlineBanner" class="offline" hidden>You're offline. The type checker works; previously opened Pokémon data may be available.</div></header>
 <main class="app-main">
 <section class="view" id="view-home" aria-labelledby="homeTitle">
- <div class="hero"><div><span class="eyebrow">Your battle-type companion · v2</span><h1 id="homeTitle">Know your <em>type.</em><br>Build your team.</h1><p>Find weaknesses, explore Pokémon, compare matchups, and discover where your team's coverage is strong—or missing.</p></div><img class="hero-ball" src="icon-512.png" alt="Glowing Poké Ball"></div>
- <div class="feature-grid">
-  <button class="feature" data-view="type"><span class="glyph">◈</span><span class="arrow">↗</span><strong>Type checker</strong><small>Understand every weakness, resistance, and immunity.</small></button>
-  <button class="feature" data-view="pokemon"><span class="glyph">◉</span><span class="arrow">↗</span><strong>Pokémon lookup</strong><small>Types, artwork, evolutions, and level-up moves.</small></button>
-  <button class="feature" data-view="combo"><span class="glyph">⌕</span><span class="arrow">↗</span><strong>Type combination</strong><small>Find Pokémon with the typings you need.</small></button>
-  <button class="feature" data-view="vs"><span class="glyph">⚔</span><span class="arrow">↗</span><strong>Matchup VS</strong><small>See type effectiveness in both directions.</small></button>
-  <button class="feature" data-view="team"><span class="glyph">⬡</span><span class="arrow">↗</span><strong>Team coverage</strong><small>Build six Pokémon, set moves, and spot gaps.</small></button>
- </div><p class="hint" style="margin-top:17px">Type calculations work without internet. Other tools use PokéAPI; previously fetched data may be available offline.</p>
+ <div class="home-shell">
+  <h1 id="homeTitle" class="sr-only">PokéType Checker</h1>
+  <div class="feature-grid">
+   <button class="feature" type="button" data-view="type"><strong>Type Checker</strong><small>Pick a type or pair to explore counters and coverage.</small></button>
+   <button class="feature" type="button" data-view="pokemon"><strong>Pokémon Checker</strong><small>Look up a Pokémon’s weaknesses and evolution line.</small></button>
+   <button class="feature" type="button" data-view="combo"><strong>Type Combo Search</strong><small>Find Pokémon with a single or dual typing.</small></button>
+   <button class="feature" type="button" data-view="vs"><strong>Matchup (VS)</strong><small>Compare two Pokémon for type advantage.</small></button>
+   <button class="feature" type="button" data-view="team"><strong>Team Coverage</strong><small>Build a team and see weaknesses &amp; coverage.</small></button>
+  </div>
+ </div>
+ <button class="refresh-btn" type="button" id="refreshAppBtn">🔄 Refresh App</button>
 </section>
 <section class="view" id="view-type" aria-labelledby="typeTitle" hidden>
  <div class="view-head"><div><span class="eyebrow">Battle reference</span><h1 id="typeTitle">Type checker</h1><p>Choose one or two defending types. Each attacking type is evaluated separately.</p></div><button class="back-btn" data-view="home">← Home</button></div>
- <div class="layout"><div class="panel"><h2>Choose your typing</h2><div class="controls"><div class="control"><label for="typeOne">Primary type</label><select class="field" id="typeOne"></select></div><div class="control"><label for="typeTwo">Secondary type</label><select class="field" id="typeTwo"></select></div><div class="type-display" id="typeSelected"></div><button class="btn ghost" id="typeReset">Reset types</button><p class="hint">Offense shows the effectiveness of each selected attack type independently. Defenses combine both defending types.</p></div></div><div class="results-stack"><div class="panel"><div class="section-heading"><h2>Defending against attacks</h2><span class="tag">Incoming</span></div><div id="typeDefense" class="mult-grid" aria-live="polite"></div></div><div class="panel"><div class="section-heading"><h2>Attacking other types</h2><span class="tag">Outgoing</span></div><div id="typeOffense" aria-live="polite"></div></div></div></div>
+ <div class="layout"><div class="panel"><div class="controls"><div class="control"><label for="typeOne">Type 1:</label><select class="field" id="typeOne"></select></div><div class="control"><label for="typeTwo">Type 2:</label><select class="field" id="typeTwo"></select></div><div class="type-display" id="typeSelected"></div><div class="actions type-actions"><button class="btn" id="typeCheck">Check Effectiveness</button><button class="btn ghost" id="typeReset">Reset Types</button></div><p class="hint">Offense shows the effectiveness of each selected attack type independently. Defenses combine both defending types.</p></div></div><div class="results-stack"><div class="panel"><div class="section-heading"><h2>Defending against attacks</h2><span class="tag">Incoming</span></div><div id="typeDefense" class="mult-grid" aria-live="polite"></div></div><div class="panel"><div class="section-heading"><h2>Attacking other types</h2><span class="tag">Outgoing</span></div><div id="typeOffense" aria-live="polite"></div></div></div></div>
 </section>
 <section class="view" id="view-pokemon" aria-labelledby="pokemonTitle" hidden>
  <div class="view-head"><div><span class="eyebrow">Pokédex tools</span><h1 id="pokemonTitle">Pokémon lookup</h1><p>Look up species or battle forms, then explore types, evolution paths, and level-up moves.</p></div><button class="back-btn" data-view="home">← Home</button></div>
- <div class="layout"><div class="panel controls"><div class="control"><label for="pokemonSearch">Search a Pokémon</label><div class="search-box"><input id="pokemonSearch" class="field" placeholder="Try Gengar, Charizard, Rotom…" autocomplete="off" spellcheck="false"><div class="suggestions" id="pokemonSuggestions" hidden></div></div></div><div id="pokemonInfo" class="status">Search above to get started.</div><div id="pokemonFormWrap" class="control form-select" hidden><label for="pokemonForm">Other battle varieties</label><select class="field" id="pokemonForm"></select></div><button class="btn ghost" id="pokemonClear">Clear Pokémon</button></div><div class="results-stack"><div class="panel"><div class="section-heading"><h2>Defensive type chart</h2><span class="tag">Incoming</span></div><div id="pokemonDefense" class="mult-grid"><div class="status">Select a Pokémon to see its weaknesses.</div></div></div><div class="panel"><div class="section-heading"><h2>Evolution</h2><button class="btn small" id="evolutionBtn" disabled>Show evolution</button></div><div id="evolutionResults" hidden></div></div><div class="panel"><div class="section-heading"><h2>Level-up moves</h2><span id="movesCount" class="tag">—</span></div><div class="control" style="max-width:390px;margin-bottom:12px"><label for="pokemonGameSelect">Game / version group</label><select id="pokemonGameSelect" class="field"></select></div><p id="pokemonGameNote" class="hint" style="margin-bottom:10px"></p><div id="levelMoves" class="status">Select a Pokémon to see its moves.</div></div></div></div>
+ <div class="layout"><div class="panel controls"><div class="control"><label for="pokemonSearch" class="sr-only">Search a Pokémon</label><div class="search-box"><input id="pokemonSearch" class="field" placeholder="Try Gengar, Charizard, Rotom…" autocomplete="off" spellcheck="false"><div class="suggestions" id="pokemonSuggestions" hidden></div></div></div><div id="pokemonInfo" class="pokemon-placeholder"><img class="original-placeholder" src="icon-192.png" alt="Poké Ball placeholder"></div><div id="pokemonFormWrap" class="control form-select" hidden><label for="pokemonForm">Other battle varieties</label><select class="field" id="pokemonForm"></select></div><button class="btn ghost" id="pokemonClear">Reset Pokémon</button></div><div class="results-stack"><div class="panel"><div class="section-heading"><h2>Defensive type chart</h2><span class="tag">Incoming</span></div><div id="pokemonDefense" class="mult-grid"><div class="status">Select a Pokémon to see its weaknesses.</div></div></div><div class="panel"><div class="section-heading"><h2>Evolution</h2><button class="btn small" id="evolutionBtn" disabled>Show evolution</button></div><div id="evolutionResults" hidden></div></div><div class="panel"><div class="section-heading"><h2>Level-up moves</h2><span id="movesCount" class="tag">—</span></div><div class="control" style="max-width:390px;margin-bottom:12px"><label for="pokemonGameSelect">Game / version group</label><select id="pokemonGameSelect" class="field"></select></div><p id="pokemonGameNote" class="hint" style="margin-bottom:10px"></p><div id="levelMoves" class="status">Select a Pokémon to see its moves.</div></div></div></div>
 </section>
 <section class="view" id="view-combo" aria-labelledby="comboTitle" hidden>
  <div class="view-head"><div><span class="eyebrow">Discover Pokémon</span><h1 id="comboTitle">Type combination search</h1><p>Find Pokémon that have either one selected type or both selected types.</p></div><button class="back-btn" data-view="home">← Home</button></div>
@@ -193,9 +327,10 @@ function showView(view){
 document.querySelectorAll('[data-view]').forEach(btn=>btn.addEventListener('click',()=>showView(btn.dataset.view)));
 const initialTheme=getLocal('poketype-theme-v2');
 if(initialTheme==='light')document.documentElement.dataset.theme='light';
-function updateThemeButton(){const light=document.documentElement.dataset.theme==='light';$('themeBtn').textContent=light?'☾':'☀';$('themeBtn').setAttribute('aria-label',light?'Switch to dark theme':'Switch to light theme');}
+function updateThemeButton(){const light=document.documentElement.dataset.theme==='light';$('themeBtn').textContent=light?'🌙':'☀️';$('themeBtn').setAttribute('aria-label',light?'Switch to dark theme':'Switch to light theme');}
 $('themeBtn').addEventListener('click',()=>{const light=document.documentElement.dataset.theme!=='light';document.documentElement.dataset.theme=light?'light':'dark';setLocal('poketype-theme-v2',light?'light':'dark');updateThemeButton();});
 updateThemeButton();
+$('refreshAppBtn').addEventListener('click',()=>window.location.reload());
 window.addEventListener('online',statusConnectivity);window.addEventListener('offline',statusConnectivity);statusConnectivity();
 async function json(url) {
  if(jsonRequests.has(url))return jsonRequests.get(url);
@@ -294,6 +429,7 @@ function renderTypeChecker(){
  }
 }
 $('typeOne').addEventListener('change',renderTypeChecker);$('typeTwo').addEventListener('change',renderTypeChecker);
+$('typeCheck').addEventListener('click',renderTypeChecker);
 $('typeReset').addEventListener('click',()=>{$('typeOne').value='Normal';$('typeTwo').value='';renderTypeChecker();});
 renderTypeChecker();
 /* Pokémon details, species, evolution and version-filtered moves */
@@ -313,6 +449,7 @@ async function selectProfile(ref){
   loadProfileVarieties(mon,seq);
  }catch(error){if(seq!==state.pokemonSeq)return;containerStatus($('pokemonInfo'),errText(error),true);containerStatus($('pokemonDefense'),'Pokémon data unavailable.',true);containerStatus($('levelMoves'),'Move data unavailable.',true);}
 }
+function showPokemonPlaceholder(){const box=$('pokemonInfo');box.className='pokemon-placeholder';box.replaceChildren();const img=document.createElement('img');img.className='original-placeholder';img.src='icon-192.png';img.alt='Poké Ball placeholder';box.append(img);}
 function renderPokemonInfo(mon){
  const root=$('pokemonInfo');root.className='';root.replaceChildren();
  const art=document.createElement('div');art.className='pokemon-hero';
@@ -343,7 +480,7 @@ $('pokemonForm').addEventListener('change',event=>selectProfile(event.target.val
 pokemonSearchControl=initSearch('pokemonSearch','pokemonSuggestions',entry=>selectProfile(entry.id),{onClear:()=>{
  ++state.pokemonSeq;state.pokemon=null;
  $('pokemonFormWrap').hidden=true;$('evolutionBtn').disabled=true;$('evolutionResults').hidden=true;
- containerStatus($('pokemonInfo'),'Choose a search result to view its details.');containerStatus($('pokemonDefense'),'Select a Pokémon to see its weaknesses.');containerStatus($('levelMoves'),'Select a Pokémon to see its moves.');$('movesCount').textContent='—';
+ showPokemonPlaceholder();containerStatus($('pokemonDefense'),'Select a Pokémon to see its weaknesses.');containerStatus($('levelMoves'),'Select a Pokémon to see its moves.');$('movesCount').textContent='—';
 }});
 $('pokemonClear').addEventListener('click',()=>{pokemonSearchControl.clear();$('pokemonSearch').focus();});
 function evoMethod(detail){

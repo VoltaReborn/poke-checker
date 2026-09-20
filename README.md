@@ -1,6 +1,13 @@
-# PokéType Checker v2
+# PokéType Checker v2 — original-look edition
 
-A dark-themed, installable, vanilla HTML/CSS/JavaScript Pokémon reference and team type-coverage tool.
+A rebuilt, installable vanilla HTML/CSS/JavaScript Pokémon reference that **keeps the original PokéType Checker appearance** (compact five-card home screen, simple navy header, gold borders, centered Back to Home buttons, and no marketing hero or extra navigation) while retaining the v2 calculation, search, move, team, and caching improvements.
+
+## Updating your existing project
+
+1. Make a backup commit if your repository has uncommitted changes.
+2. Extract the **contents** of this ZIP directly into your existing PokéType Checker project folder, replacing app files. The ZIP is flat (no extra parent folder).
+3. **Keep the existing `.git` directory untouched.** It is not included in this ZIP. GitHub Desktop will recognize the changes once you add/open that existing repository.
+4. Deploy as before. If you just deployed the preceding v2 design, the updated service-worker cache name makes the original-look revision install as a new app shell. Existing team data stays in the browser.
 
 ## Start
 
@@ -27,6 +34,9 @@ The 18-type calculation data and app shell work offline after installation. Pok�
 The type chart uses modern (Generation VI onward) basic type rules. A version-group selection filters **learnset/level-up move records**, not game-specific battle mechanics, availability, transfer legality, or evolution conditions. Type and move comparisons omit abilities, items, Terastallization, weather, stats, power, STAB, priority, accuracy, PP, move-specific exceptions, and actual game rules. Offensive coverage counts only moves with a documented attacking damage class and positive numeric base power, omitting fixed/variable-power moves. It reports effectiveness against the 18 single types plus all 153 different dual-type combinations (171 theoretical defending typings), not every obtainable opponent. Pokémon included in an API may not be obtainable in the selected game. The app cannot guarantee a legal competitive moveset.
 
 ## Testing
+
+The original-look restoration was checked in a real browser at desktop and mobile widths, including the home screen, Type Checker, screen navigation, and interactions. Network-backed Pokémon and deployment/PWA features still require verification on your actual hosting domain.
+
 
 Run `node tests/test-core.cjs` to execute calculation and saved-team migration tests. The test script extracts the marked pure core from `index.html` so there is no second chart or engine to drift out of sync. Run `node --check sw.js`, `python -m json.tool manifest.json`, and use browser tests for UI/API workflows. Network calls need to be verified in a real browser with internet.
 
